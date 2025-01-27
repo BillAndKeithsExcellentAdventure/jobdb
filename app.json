@@ -1,0 +1,6 @@
+{
+  "newArchEnabled": true,
+  "plugins": [
+    "expo-sqlite"
+  ]
+}
