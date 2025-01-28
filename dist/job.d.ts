@@ -1,19 +1,16 @@
 import { SQLiteDatabase } from "expo-sqlite";
 import { DBStatus } from "./jobtrakr";
-export interface JobData {
-    _id: bigint | null;
-    Code: string | null;
-    Name: string;
-    JobTypeId: number;
-    CustomerId: number;
-    JobLocation: string | null;
-    JobStatus: string | null;
-}
+import { JobData } from "./jobData";
 export declare class JobDB {
     private _db;
     readonly _tableName = "jobs";
     private _customerId;
     constructor(db: SQLiteDatabase, custId: number);
     CreateJobTable(): DBStatus;
-    CreateJob(job: JobData): Promise<DBStatus>;
+    CreateJob(id: {
+        value: bigint;
+    }, job: JobData): Promise<DBStatus>;
+    UpdateJob(job: JobData): Promise<DBStatus>;
+    DeleteJob(id: bigint): Promise<DBStatus>;
+    FetchAllJobs(jobs: JobData[]): Promise<DBStatus>;
 }

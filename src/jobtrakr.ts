@@ -3,7 +3,7 @@ import { JobDB } from "./job";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
-export type DBStatus = "Success" | "Error";
+export type DBStatus = "Success" | "Error" | "NoChanges";
 
 export class JobTrakrDB {
     private _db: SQLiteDatabase | null;

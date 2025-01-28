@@ -1,6 +1,6 @@
 import { SQLiteDatabase } from "expo-sqlite";
 import { JobDB } from "./job";
-export type DBStatus = "Success" | "Error";
+export type DBStatus = "Success" | "Error" | "NoChanges";
 export declare class JobTrakrDB {
     private _db;
     private _dbName;
