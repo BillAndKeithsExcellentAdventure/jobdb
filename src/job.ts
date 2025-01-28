@@ -1,11 +1,11 @@
 import { SQLiteDatabase, openDatabaseAsync } from "expo-sqlite"; // Use 'react-native-sqlite-storage' if using React Native
 import { DBStatus } from "./jobtrakr";
-import { BuildUniqueId } from "../dbutils";
+import { BuildUniqueId } from "./dbutils";
 import { Transaction } from "react-native-sqlite-storage";
 
 // Use for Inserts and updates. If inserting, _id should be null. If updating, _id should be the primary key of the record.
 export interface JobData {
-    _id: number | null;
+    _id: bigint | null;
     Code: string | null;
     Name: string;
     JobTypeId: number;
@@ -30,8 +30,8 @@ export class JobDB {
             `CREATE TABLE IF NOT EXISTS ${this._tableName} (_id INTEGER PRIMARY KEY, ` +
                 "Code TEXT, " +
                 "Name TEXT, " +
-                "JobTypeId NUMBER, " +
-                "CustomerId NUMBER, " +
+                "JobTypeId INTEGER, " +
+                "CustomerId INTEGER, " +
                 "JobLocation TEXT, " +
                 "JobStatus TEXT)"
         );
@@ -54,9 +54,10 @@ export class JobDB {
 
             try {
                 job._id = await BuildUniqueId(tx, this._customerId);
-                if (job._id > -1) {
+                console.log("BuildUniqueId returned :", job._id);
+                if (job._id > -1n) {
                     await statement.executeAsync({
-                        $Job: job._id,
+                        $_id: job._id.toString(),
                         $Code: job.Code,
                         $Name: job.Name,
                         $JobTypeId: job.JobTypeId,

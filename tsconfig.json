@@ -10,7 +10,7 @@
     "skipLibCheck": true
   },
   "include": [
-    "src/publicApi/index.ts"
+    "src/*"
   ],
   "exclude": [
     "node_modules"

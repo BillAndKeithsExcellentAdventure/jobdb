@@ -3,25 +3,18 @@ async function GetNextId(db) {
     try {
         const statement = db.prepareSync("insert into jobtrakr_ids default values");
         try {
-            const result = statement.executeSync(101);
+            const result = statement.executeSync();
+            nextId = result.lastInsertRowId;
             console.log("lastInsertRowId:", result.lastInsertRowId);
+            console.log("nextId:", nextId);
             console.log("changes:", result.changes);
         }
         finally {
             statement.finalizeSync();
         }
-        const statement2 = db.prepareSync("SELECT value FROM test WHERE value > ?");
-        try {
-            const result = statement2.executeSync();
-            for (const row of result) {
-                nextId = row.value;
-                console.log("row value:", row.value);
-                break;
-            }
-        }
-        finally {
-            statement.finalizeSync();
-        }
+        const firstRow = (await db.getFirstAsync('SELECT seq FROM sqlite_sequence WHERE name = "jobtrakr_ids"'));
+        nextId = firstRow.seq;
+        console.log(`Seq from getFirstAsync: ${firstRow.seq}`);
         return nextId;
     }
     catch (error) {
@@ -30,7 +23,7 @@ async function GetNextId(db) {
     }
 }
 export async function BuildUniqueId(db, custId) {
-    let uniqueId = -1;
+    let uniqueId = -1n;
     if (!db) {
         return -1;
     }
@@ -38,6 +31,7 @@ export async function BuildUniqueId(db, custId) {
     if (nextId === -1) {
         return -1;
     }
-    uniqueId = (custId << 32) | nextId;
+    uniqueId = (BigInt(custId) << 32n) | BigInt(nextId);
+    console.log(`NextId: ${nextId}, CustomerId: ${custId} => UniqueId: ${uniqueId}`);
     return uniqueId;
 }

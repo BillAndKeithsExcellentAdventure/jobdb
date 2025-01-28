@@ -1,7 +1,7 @@
 import { SQLiteDatabase } from "expo-sqlite";
 import { DBStatus } from "./jobtrakr";
 export interface JobData {
-    _id: number | null;
+    _id: bigint | null;
     Code: string | null;
     Name: string;
     JobTypeId: number;

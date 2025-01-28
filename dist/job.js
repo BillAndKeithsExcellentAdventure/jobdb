@@ -1,4 +1,4 @@
-import { BuildUniqueId } from "../dbutils";
+import { BuildUniqueId } from "./dbutils";
 export class JobDB {
     _db;
     _tableName = "jobs";
@@ -12,8 +12,8 @@ export class JobDB {
         this._db?.execSync(`CREATE TABLE IF NOT EXISTS ${this._tableName} (_id INTEGER PRIMARY KEY, ` +
             "Code TEXT, " +
             "Name TEXT, " +
-            "JobTypeId NUMBER, " +
-            "CustomerId NUMBER, " +
+            "JobTypeId INTEGER, " +
+            "CustomerId INTEGER, " +
             "JobLocation TEXT, " +
             "JobStatus TEXT)");
         return "Success";
@@ -28,9 +28,10 @@ export class JobDB {
                 " VALUES ($_id, $Code, $Name, $JobTypeId, $CustomerId, $JobLocation, $JobStatus)");
             try {
                 job._id = await BuildUniqueId(tx, this._customerId);
-                if (job._id > -1) {
+                console.log("BuildUniqueId returned :", job._id);
+                if (job._id > -1n) {
                     await statement.executeAsync({
-                        $Job: job._id,
+                        $_id: job._id.toString(),
                         $Code: job.Code,
                         $Name: job.Name,
                         $JobTypeId: job.JobTypeId,
