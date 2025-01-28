@@ -19,6 +19,17 @@ export class JobTrakrDB {
         //this._logger = new DBLogger(new ConsoleLogStrategy());
         console.log("Done constructing JobTrakrDB");
     }
+    DeleteDatabase = async () => {
+        console.log("Deleting database");
+        try {
+            const filename = FileSystem.documentDirectory + `SQLite/${this._dbName}`;
+            await FileSystem.deleteAsync(filename);
+            console.log(`*********** Database deleted ${filename} ***********`);
+        }
+        catch (error) {
+            console.error("Error deleting database:", error);
+        }
+    };
     CopyFileToDownloads = async () => {
         try {
             const sourcePath = FileSystem.documentDirectory + `SQLite/${this._dbName}`;

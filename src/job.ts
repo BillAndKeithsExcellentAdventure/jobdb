@@ -1,18 +1,7 @@
 import { SQLiteDatabase, openDatabaseAsync } from "expo-sqlite"; // Use 'react-native-sqlite-storage' if using React Native
 import { DBStatus } from "./jobtrakr";
 import { BuildUniqueId } from "./dbutils";
-import { JobData } from "./jobData";
-
-// Use for Inserts and updates. If inserting, _id should be null. If updating, _id should be the primary key of the record.
-// export interface JobData {
-//     _id: bigint | null;
-//     Code: string | null;
-//     Name: string | null;
-//     JobTypeId: bigint | null;
-//     CustomerId: bigint | null;
-//     JobLocation: string | null;
-//     JobStatus: string | null;
-// }
+import { JobData } from "./interfaces";
 
 export class JobDB {
     private _db: SQLiteDatabase | null;
@@ -33,6 +22,9 @@ export class JobDB {
                 "JobTypeId INTEGER, " +
                 "CustomerId INTEGER not null, " +
                 "JobLocation TEXT, " +
+                "StartDate Date, " +
+                "PlannedFinish Date, " +
+                "BidPrice NUMBER, " +
                 "JobStatus TEXT)"
         );
 
@@ -43,14 +35,18 @@ export class JobDB {
         if (!this._db) {
             return "Error";
         }
+        console.log("Creating job:", job);
 
         let status: DBStatus = "Error";
 
         await this._db.withExclusiveTransactionAsync(async (tx) => {
+            console.log("preparing statement for job");
             const statement = await tx.prepareAsync(
-                `INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, CustomerId, JobLocation, JobStatus) ` +
-                    " VALUES ($_id, $Code, $Name, $JobTypeId, $CustomerId, $JobLocation, $JobStatus)"
+                `INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, CustomerId, JobLocation, StartDate, PlannedFinish, BidPrice, JobStatus) ` +
+                    " VALUES ($_id, $Code, $Name, $JobTypeId, $CustomerId, $JobLocation, $StartDate, $PlannedFinish, $BidPrice, $JobStatus)"
             );
+
+            console.log("CreateJob statement created");
 
             try {
                 job._id = await BuildUniqueId(tx, this._customerId);
@@ -66,6 +62,9 @@ export class JobDB {
                         JobTypeId: string;
                         CustomerId: string;
                         JobLocation: string;
+                        StartDate?: Date;
+                        PlannedFinish?: Date;
+                        BidPrice?: number;
                         JobStatus: string;
                     }>(
                         job._id?.toString(),
@@ -74,6 +73,9 @@ export class JobDB {
                         job.JobTypeId ? job.JobTypeId.toString() : null,
                         job.CustomerId ? job.CustomerId.toString() : null,
                         job.JobLocation,
+                        job.StartDate ? job.StartDate.toString() : null,
+                        job.PlannedFinish ? job.PlannedFinish.toString() : null,
+                        job.BidPrice ? job.BidPrice.toString() : null,
                         job.JobStatus
                     );
 
@@ -81,6 +83,7 @@ export class JobDB {
                 }
             } catch (error) {
                 status = "Error";
+                console.error("Error creating job:", error);
             } finally {
                 statement.finalizeAsync();
             }
@@ -101,7 +104,8 @@ export class JobDB {
             console.log("Inside withExclusiveTransactionAsync for job:", job._id);
             const statement = await tx.prepareAsync(
                 `update ${this._tableName} set ` +
-                    " code = $Code, name = $Name, JobTypeId = $JobTypeId, CustomerId = $CustomerId, JobLocation = $JobLocation, JobStatus = $JobStatus" +
+                    " code = $Code, name = $Name, JobTypeId = $JobTypeId, CustomerId = $CustomerId, JobLocation = $JobLocation, " +
+                    " StartDate = $StartDate, PlannedFinish = $PlannedFinish, BidPrice = $BidPrice, JobStatus = $JobStatus" +
                     " where _id = $_id"
             );
 
@@ -114,6 +118,9 @@ export class JobDB {
                     JobTypeId: string;
                     CustomerId: string;
                     JobLocation: string;
+                    StartDate?: Date;
+                    PlannedFinish?: Date;
+                    BidPrice?: number;
                     JobStatus: string;
                     _id: string;
                 }>(
@@ -122,6 +129,9 @@ export class JobDB {
                     job.JobTypeId ? job.JobTypeId.toString() : null,
                     job.CustomerId ? job.CustomerId.toString() : null,
                     job.JobLocation,
+                    job.StartDate ? job.StartDate.toString() : null,
+                    job.PlannedFinish ? job.PlannedFinish.toString() : null,
+                    job.BidPrice ? job.BidPrice.toString() : null,
                     job.JobStatus,
                     job._id ? job._id.toString() : null
                 );
@@ -192,7 +202,7 @@ export class JobDB {
 
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             const statement = await this._db?.prepareAsync(
-                `select _id, code, name, JobTypeId, CustomerId, JobLocation, JobStatus from ${this._tableName}`
+                `select _id, code, name, JobTypeId, CustomerId, JobLocation, StartDate, PlannedFinish, BidPrice, JobStatus from ${this._tableName}`
             );
 
             try {
@@ -203,6 +213,9 @@ export class JobDB {
                     JobTypeId: string;
                     CustomerId: string;
                     JobLocation: string;
+                    StartDate?: Date;
+                    PlannedFinish?: Date;
+                    BidPrice?: number;
                     JobStatus: string;
                 }>();
 
@@ -216,6 +229,9 @@ export class JobDB {
                                 JobTypeId: BigInt(row.JobTypeId),
                                 CustomerId: BigInt(row.CustomerId),
                                 JobLocation: row.JobLocation,
+                                StartDate: row.StartDate,
+                                PlannedFinish: row.PlannedFinish,
+                                BidPrice: row.BidPrice,
                                 JobStatus: row.JobStatus,
                             });
                         }

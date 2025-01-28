@@ -5,5 +5,8 @@ export interface JobData {
     JobTypeId: bigint | null;
     CustomerId: bigint | null;
     JobLocation: string | null;
+    StartDate?: Date;
+    PlannedFinish?: Date;
+    BidPrice?: number;
     JobStatus: string | null;
 }

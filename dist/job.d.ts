@@ -1,6 +1,6 @@
 import { SQLiteDatabase } from "expo-sqlite";
 import { DBStatus } from "./jobtrakr";
-import { JobData } from "./jobData";
+import { JobData } from "./interfaces";
 export declare class JobDB {
     private _db;
     readonly _tableName = "jobs";

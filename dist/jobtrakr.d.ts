@@ -7,6 +7,7 @@ export declare class JobTrakrDB {
     private _customerId;
     private _jobDB;
     constructor(custId: number);
+    DeleteDatabase: () => Promise<void>;
     CopyFileToDownloads: () => Promise<void>;
     OpenDatabase(): Promise<DBStatus>;
     GetDb(): SQLiteDatabase | null;

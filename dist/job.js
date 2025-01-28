@@ -1,14 +1,4 @@
 import { BuildUniqueId } from "./dbutils";
-// Use for Inserts and updates. If inserting, _id should be null. If updating, _id should be the primary key of the record.
-// export interface JobData {
-//     _id: bigint | null;
-//     Code: string | null;
-//     Name: string | null;
-//     JobTypeId: bigint | null;
-//     CustomerId: bigint | null;
-//     JobLocation: string | null;
-//     JobStatus: string | null;
-// }
 export class JobDB {
     _db;
     _tableName = "jobs";
@@ -25,6 +15,9 @@ export class JobDB {
             "JobTypeId INTEGER, " +
             "CustomerId INTEGER not null, " +
             "JobLocation TEXT, " +
+            "StartDate Date, " +
+            "PlannedFinish Date, " +
+            "BidPrice NUMBER, " +
             "JobStatus TEXT)");
         return "Success";
     }
@@ -32,21 +25,25 @@ export class JobDB {
         if (!this._db) {
             return "Error";
         }
+        console.log("Creating job:", job);
         let status = "Error";
         await this._db.withExclusiveTransactionAsync(async (tx) => {
-            const statement = await tx.prepareAsync(`INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, CustomerId, JobLocation, JobStatus) ` +
-                " VALUES ($_id, $Code, $Name, $JobTypeId, $CustomerId, $JobLocation, $JobStatus)");
+            console.log("preparing statement for job");
+            const statement = await tx.prepareAsync(`INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, CustomerId, JobLocation, StartDate, PlannedFinish, BidPrice, JobStatus) ` +
+                " VALUES ($_id, $Code, $Name, $JobTypeId, $CustomerId, $JobLocation, $StartDate, $PlannedFinish, $BidPrice, $JobStatus)");
+            console.log("CreateJob statement created");
             try {
                 job._id = await BuildUniqueId(tx, this._customerId);
                 id.value = job._id;
                 console.log("BuildUniqueId returned :", job._id);
                 if (job._id > -1n) {
-                    await statement.executeAsync(job._id?.toString(), job.Code, job.Name, job.JobTypeId ? job.JobTypeId.toString() : null, job.CustomerId ? job.CustomerId.toString() : null, job.JobLocation, job.JobStatus);
+                    await statement.executeAsync(job._id?.toString(), job.Code, job.Name, job.JobTypeId ? job.JobTypeId.toString() : null, job.CustomerId ? job.CustomerId.toString() : null, job.JobLocation, job.StartDate ? job.StartDate.toString() : null, job.PlannedFinish ? job.PlannedFinish.toString() : null, job.BidPrice ? job.BidPrice.toString() : null, job.JobStatus);
                     status = "Success";
                 }
             }
             catch (error) {
                 status = "Error";
+                console.error("Error creating job:", error);
             }
             finally {
                 statement.finalizeAsync();
@@ -63,11 +60,12 @@ export class JobDB {
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             console.log("Inside withExclusiveTransactionAsync for job:", job._id);
             const statement = await tx.prepareAsync(`update ${this._tableName} set ` +
-                " code = $Code, name = $Name, JobTypeId = $JobTypeId, CustomerId = $CustomerId, JobLocation = $JobLocation, JobStatus = $JobStatus" +
+                " code = $Code, name = $Name, JobTypeId = $JobTypeId, CustomerId = $CustomerId, JobLocation = $JobLocation, " +
+                " StartDate = $StartDate, PlannedFinish = $PlannedFinish, BidPrice = $BidPrice, JobStatus = $JobStatus" +
                 " where _id = $_id");
             console.log("Updating job statement created for:", job._id);
             try {
-                let result = await statement.executeAsync(job.Code, job.Name, job.JobTypeId ? job.JobTypeId.toString() : null, job.CustomerId ? job.CustomerId.toString() : null, job.JobLocation, job.JobStatus, job._id ? job._id.toString() : null);
+                let result = await statement.executeAsync(job.Code, job.Name, job.JobTypeId ? job.JobTypeId.toString() : null, job.CustomerId ? job.CustomerId.toString() : null, job.JobLocation, job.StartDate ? job.StartDate.toString() : null, job.PlannedFinish ? job.PlannedFinish.toString() : null, job.BidPrice ? job.BidPrice.toString() : null, job.JobStatus, job._id ? job._id.toString() : null);
                 if (result.changes > 0) {
                     console.log(`Job updated: ${job._id}. Changes = ${result.changes}`);
                     status = "Success";
@@ -126,7 +124,7 @@ export class JobDB {
         }
         let status = "Error";
         await this._db.withExclusiveTransactionAsync(async (tx) => {
-            const statement = await this._db?.prepareAsync(`select _id, code, name, JobTypeId, CustomerId, JobLocation, JobStatus from ${this._tableName}`);
+            const statement = await this._db?.prepareAsync(`select _id, code, name, JobTypeId, CustomerId, JobLocation, StartDate, PlannedFinish, BidPrice, JobStatus from ${this._tableName}`);
             try {
                 const result = await statement?.executeAsync();
                 if (result) {
@@ -139,6 +137,9 @@ export class JobDB {
                                 JobTypeId: BigInt(row.JobTypeId),
                                 CustomerId: BigInt(row.CustomerId),
                                 JobLocation: row.JobLocation,
+                                StartDate: row.StartDate,
+                                PlannedFinish: row.PlannedFinish,
+                                BidPrice: row.BidPrice,
                                 JobStatus: row.JobStatus,
                             });
                         }
