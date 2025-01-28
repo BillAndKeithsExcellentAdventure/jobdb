@@ -10,3 +10,21 @@ export interface JobData {
     BidPrice?: number;
     JobStatus: string | null;
 }
+
+export interface JobCategoryData {
+    _id: bigint | null;
+    JobId: bigint;
+    Code: string | null;
+    CategoryName: string;
+    EstPrice?: number;
+    CategoryStatus: string | null;
+}
+
+export interface JobCategoryItemData {
+    _id: bigint | null;
+    CategoryId: bigint;
+    Code: string | null;
+    ItemName: string;
+    EstPrice?: number;
+    ItemStatus: string | null;
+}
