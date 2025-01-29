@@ -1,6 +1,7 @@
 import { SQLiteDatabase, openDatabaseAsync } from "expo-sqlite"; // Use 'react-native-sqlite-storage' if using React Native
 import { JobDB } from "./job";
 import { CategoryDB } from "./Category";
+import { ItemDB } from "./Item";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
@@ -13,6 +14,7 @@ export class JobTrakrDB {
     private _customerId: number;
     private _jobDB: JobDB | null = null;
     private _categoryDB: CategoryDB | null = null;
+    private _itemDB: ItemDB | null = null;
 
     // custId is the customer ID obtained from the OAuth2 login process.
     // This number MUST be unique for each customer. It is used to ensure that each customer's data is kept separate.
@@ -111,5 +113,18 @@ export class JobTrakrDB {
         }
 
         return this._categoryDB;
+    }
+
+    public GetItemDB(): ItemDB {
+        if (this._db && !this._itemDB) {
+            this._itemDB = new ItemDB(this._db, this._customerId);
+            this._itemDB.CreateItemTable(); // Ensure the Item table exists. It will do a "Create if not exists" operation.
+        }
+
+        if (!this._itemDB) {
+            throw new Error("ItemDB is not initialized");
+        }
+
+        return this._itemDB;
     }
 }

@@ -1,6 +1,7 @@
 import { SQLiteDatabase } from "expo-sqlite";
 import { JobDB } from "./job";
 import { CategoryDB } from "./Category";
+import { ItemDB } from "./Item";
 export type DBStatus = "Success" | "Error" | "NoChanges";
 export declare class JobTrakrDB {
     private _db;
@@ -8,6 +9,7 @@ export declare class JobTrakrDB {
     private _customerId;
     private _jobDB;
     private _categoryDB;
+    private _itemDB;
     constructor(custId: number);
     DeleteDatabase: () => Promise<void>;
     CopyFileToDownloads: () => Promise<void>;
@@ -16,4 +18,5 @@ export declare class JobTrakrDB {
     CreateAutoIncrementTable(): void;
     GetJobDB(): JobDB;
     GetCategoryDB(): CategoryDB;
+    GetItemDB(): ItemDB;
 }
