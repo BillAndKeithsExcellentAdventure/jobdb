@@ -11,6 +11,7 @@ export declare class JobDB {
         value: bigint;
     }, job: JobData): Promise<DBStatus>;
     UpdateJob(job: JobData): Promise<DBStatus>;
+    UpdateLocationInformation(long: number, lat: number, radius: number, id: bigint): Promise<DBStatus>;
     DeleteJob(id: bigint): Promise<DBStatus>;
     FetchAllJobs(jobs: JobData[]): Promise<DBStatus>;
 }

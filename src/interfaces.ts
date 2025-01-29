@@ -8,12 +8,15 @@ export interface JobData {
     StartDate?: Date;
     PlannedFinish?: Date;
     BidPrice?: number;
+    Longitude?: number;
+    Latitude?: number;
+    Radius?: number;
     JobStatus: string | null;
 }
 
 export interface JobCategoryData {
     _id: bigint | null;
-    JobId: bigint;
+    JobId: bigint | null;
     Code: string | null;
     CategoryName: string;
     EstPrice?: number;
@@ -27,4 +30,15 @@ export interface JobCategoryItemData {
     ItemName: string;
     EstPrice?: number;
     ItemStatus: string | null;
+}
+
+export interface PictureBucketData {
+    _id: bigint | null;
+    CustomerId: bigint | null;
+    JobId: bigint | null;
+    DeviceId: bigint | null;
+    FolderName: string | null;
+    PictureName: string | null;
+    DateAdded?: Date | null;
+    PictureDate?: Date | null;
 }

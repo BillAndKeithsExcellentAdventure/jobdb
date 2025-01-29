@@ -25,6 +25,9 @@ export class JobDB {
                 "StartDate Date, " +
                 "PlannedFinish Date, " +
                 "BidPrice NUMBER, " +
+                "Longitude NUMBER, " +
+                "Latitude NUMBER, " +
+                "Radius NUMBER, " +
                 "JobStatus TEXT)"
         );
 
@@ -42,8 +45,8 @@ export class JobDB {
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             console.log("preparing statement for job");
             const statement = await tx.prepareAsync(
-                `INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, CustomerId, JobLocation, StartDate, PlannedFinish, BidPrice, JobStatus) ` +
-                    " VALUES ($_id, $Code, $Name, $JobTypeId, $CustomerId, $JobLocation, $StartDate, $PlannedFinish, $BidPrice, $JobStatus)"
+                `INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, CustomerId, JobLocation, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, JobStatus) ` +
+                    " VALUES ($_id, $Code, $Name, $JobTypeId, $CustomerId, $JobLocation, $StartDate, $PlannedFinish, $BidPrice, $Longitude, $Latitude, $Radius, $JobStatus)"
             );
 
             console.log("CreateJob statement created");
@@ -65,6 +68,9 @@ export class JobDB {
                         StartDate?: Date;
                         PlannedFinish?: Date;
                         BidPrice?: number;
+                        Longitude?: number;
+                        Latitude?: number;
+                        Radius?: number;
                         JobStatus: string;
                     }>(
                         job._id?.toString(),
@@ -76,6 +82,9 @@ export class JobDB {
                         job.StartDate ? job.StartDate.toString() : null,
                         job.PlannedFinish ? job.PlannedFinish.toString() : null,
                         job.BidPrice ? job.BidPrice.toString() : null,
+                        job.Longitude ? job.Longitude.toString() : null,
+                        job.Latitude ? job.Latitude.toString() : null,
+                        job.Radius ? job.Radius.toString() : null,
                         job.JobStatus
                     );
 
@@ -105,7 +114,8 @@ export class JobDB {
             const statement = await tx.prepareAsync(
                 `update ${this._tableName} set ` +
                     " code = $Code, name = $Name, JobTypeId = $JobTypeId, CustomerId = $CustomerId, JobLocation = $JobLocation, " +
-                    " StartDate = $StartDate, PlannedFinish = $PlannedFinish, BidPrice = $BidPrice, JobStatus = $JobStatus" +
+                    " StartDate = $StartDate, PlannedFinish = $PlannedFinish, BidPrice = $BidPrice, JobStatus = $JobStatus, " +
+                    " Longitude = $Longitude, Latitude = $Latitude, Radius = $Radius" +
                     " where _id = $_id"
             );
 
@@ -122,6 +132,9 @@ export class JobDB {
                     PlannedFinish?: Date;
                     BidPrice?: number;
                     JobStatus: string;
+                    Longitude?: number;
+                    Latitude?: number;
+                    Radius?: number;
                     _id: string;
                 }>(
                     job.Code,
@@ -133,6 +146,9 @@ export class JobDB {
                     job.PlannedFinish ? job.PlannedFinish.toString() : null,
                     job.BidPrice ? job.BidPrice.toString() : null,
                     job.JobStatus,
+                    job.Longitude ? job.Longitude.toString() : null,
+                    job.Latitude ? job.Latitude.toString() : null,
+                    job.Radius ? job.Radius.toString() : null,
                     job._id ? job._id.toString() : null
                 );
 
@@ -152,6 +168,56 @@ export class JobDB {
         });
 
         console.log("Returning from update statement:", job._id);
+        return status;
+    }
+
+    public async UpdateLocationInformation(long: number, lat: number, radius: number, id: bigint): Promise<DBStatus> {
+        if (!this._db) {
+            return "Error";
+        }
+
+        let status: DBStatus = "Error";
+
+        console.log("Updating jobs long/lat/radius:", id);
+        await this._db.withExclusiveTransactionAsync(async (tx) => {
+            console.log("Inside withExclusiveTransactionAsync for job:", id);
+            const statement = await tx.prepareAsync(
+                `update ${this._tableName} set ` +
+                    " Longitude = $Longitude, Latitude = $Latitude, Radius = $Radius" +
+                    " where _id = $_id"
+            );
+
+            console.log("Updating job long/lat/radius statement created for:", id);
+
+            try {
+                let result = await statement.executeAsync<{
+                    Longitude?: number;
+                    Latitude?: number;
+                    Radius?: number;
+                    _id: string;
+                }>(
+                    long ? long.toString() : null,
+                    lat ? lat.toString() : null,
+                    radius ? radius.toString() : null,
+                    id ? id.toString() : null
+                );
+
+                if (result.changes > 0) {
+                    console.log(`Job long/lat/radius updated: ${id}. Changes = ${result.changes}`);
+                    status = "Success";
+                } else {
+                    console.log(`Job long/lat/radius updated: ${id}. Changes = ${result.changes}`);
+                    status = "NoChanges";
+                }
+            } catch (error) {
+                console.error("Error updating job long/lat/radius:", error);
+                status = "Error";
+            } finally {
+                statement.finalizeAsync();
+            }
+        });
+
+        console.log("Returning from long/lat/radius update statement:", id);
         return status;
     }
 
@@ -202,7 +268,7 @@ export class JobDB {
 
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             const statement = await this._db?.prepareAsync(
-                `select _id, code, name, JobTypeId, CustomerId, JobLocation, StartDate, PlannedFinish, BidPrice, JobStatus from ${this._tableName}`
+                `select _id, code, name, JobTypeId, CustomerId, JobLocation, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, JobStatus from ${this._tableName}`
             );
 
             try {
@@ -216,6 +282,9 @@ export class JobDB {
                     StartDate?: Date;
                     PlannedFinish?: Date;
                     BidPrice?: number;
+                    Longitude?: number;
+                    Latitude?: number;
+                    Radius?: number;
                     JobStatus: string;
                 }>();
 
@@ -232,6 +301,9 @@ export class JobDB {
                                 StartDate: row.StartDate,
                                 PlannedFinish: row.PlannedFinish,
                                 BidPrice: row.BidPrice,
+                                Longitude: row.Longitude,
+                                Latitude: row.Latitude,
+                                Radius: row.Radius,
                                 JobStatus: row.JobStatus,
                             });
                         }
