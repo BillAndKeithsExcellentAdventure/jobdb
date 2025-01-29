@@ -1,6 +1,6 @@
 {
     "name": "jobdb",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "description": "Package to interact with a Job database.",
     "main": "dist/publicApi.js",
     "types": "publicApi.d.ts",
