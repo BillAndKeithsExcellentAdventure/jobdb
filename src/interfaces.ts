@@ -37,8 +37,10 @@ export interface PictureBucketData {
     CustomerId: bigint | null;
     JobId: bigint | null;
     DeviceId: bigint | null;
-    FolderName: string | null;
-    PictureName: string | null;
+    AlbumId: string | null;
+    AssetId: string | null;
+    Longitude?: number | null;
+    Latitude?: number | null;
     DateAdded?: Date | null;
     PictureDate?: Date | null;
 }

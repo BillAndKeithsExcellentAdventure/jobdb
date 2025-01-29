@@ -20,8 +20,10 @@ export class PictureBucketDB {
                 "CustomerId INTEGER, " +
                 "JobId INTEGER, " +
                 "DeviceId INTEGER, " +
-                "FolderName TEXT, " +
-                "PictureName TEXT, " +
+                "AlbumId TEXT, " +
+                "AssetId TEXT, " +
+                "Longitude NUMBER, " +
+                "Latitude NUMBER, " +
                 "DateAdded Date, " +
                 "PictureDate Date"
         );
@@ -40,8 +42,8 @@ export class PictureBucketDB {
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             console.log("preparing statement for PictureBucket");
             const statement = await tx.prepareAsync(
-                `INSERT INTO ${this._tableName} (_id, CustomerId, DeviceId, JobId, FolderName, PictureName, DateAdded, PictureDate) ` +
-                    " VALUES ($_id, $CustomerId, $DeviceId, $JobId, $FolderName, $PictureName, $DateAdded, $PictureDate)"
+                `INSERT INTO ${this._tableName} (_id, CustomerId, DeviceId, JobId, AlbumId, AssetId, DateAdded, Longitude, Latitude, PictureDate) ` +
+                    " VALUES ($_id, $CustomerId, $DeviceId, $JobId, $AlbumId, $AssetId, $DateAdded, $Longitude, $Latitude, $PictureDate)"
             );
 
             console.log("Create PictureBucket statement created");
@@ -58,18 +60,22 @@ export class PictureBucketDB {
                         CustomerId: string;
                         DeviceId: string;
                         JobId: string;
-                        FolderName: string;
-                        PictureName: string;
+                        AlbumId: string;
+                        AssetId: string;
                         DateAdded?: Date;
+                        Longitude?: number;
+                        Latitude?: number;
                         PictureDate?: Date;
                     }>(
                         pict._id?.toString(),
                         pict.CustomerId ? pict.CustomerId.toString() : null,
                         pict.DeviceId ? pict.DeviceId.toString() : null,
                         pict.JobId ? pict.JobId.toString() : null,
-                        pict.FolderName,
-                        pict.PictureName,
+                        pict.AlbumId,
+                        pict.AssetId,
                         pict.DateAdded ? pict.DateAdded.toString() : null,
+                        pict.Longitude ? pict.Longitude.toString() : null,
+                        pict.Latitude ? pict.Latitude.toString() : null,
                         pict.PictureDate ? pict.PictureDate.toString() : null
                     );
 
@@ -174,7 +180,7 @@ export class PictureBucketDB {
 
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             const statement = await this._db?.prepareAsync(
-                `select _id, CustomerId, DeviceId, JobId, FolderName, PictureName, DateAdded, PictureDate from ${this._tableName} where JobId = $JobId`
+                `select _id, CustomerId, DeviceId, JobId, AlbumId, AssetId, DateAdded, Longitude, Latitude, PictureDate from ${this._tableName} where JobId = $JobId`
             );
 
             try {
@@ -183,9 +189,11 @@ export class PictureBucketDB {
                     CustomerId: string;
                     DeviceId: string;
                     JobId: string;
-                    FolderName: string;
-                    PictureName: string;
+                    AlbumId: string;
+                    AssetId: string;
                     DateAdded: Date;
+                    Longitude: number;
+                    Latitude: number;
                     PictureDate: Date;
                 }>(jobId.toString());
 
@@ -197,9 +205,11 @@ export class PictureBucketDB {
                                 JobId: BigInt(row.JobId),
                                 DeviceId: BigInt(row.DeviceId),
                                 CustomerId: BigInt(row.CustomerId),
-                                FolderName: row.FolderName,
-                                PictureName: row.PictureName,
+                                AlbumId: row.AlbumId,
+                                AssetId: row.AssetId,
                                 DateAdded: row.DateAdded,
+                                Longitude: row.Longitude,
+                                Latitude: row.Latitude,
                                 PictureDate: row.PictureDate,
                             });
                         }

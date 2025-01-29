@@ -13,8 +13,10 @@ export class PictureBucketDB {
             "CustomerId INTEGER, " +
             "JobId INTEGER, " +
             "DeviceId INTEGER, " +
-            "FolderName TEXT, " +
-            "PictureName TEXT, " +
+            "AlbumId TEXT, " +
+            "AssetId TEXT, " +
+            "Longitude NUMBER, " +
+            "Latitude NUMBER, " +
             "DateAdded Date, " +
             "PictureDate Date");
         return "Success";
@@ -27,15 +29,15 @@ export class PictureBucketDB {
         let status = "Error";
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             console.log("preparing statement for PictureBucket");
-            const statement = await tx.prepareAsync(`INSERT INTO ${this._tableName} (_id, CustomerId, DeviceId, JobId, FolderName, PictureName, DateAdded, PictureDate) ` +
-                " VALUES ($_id, $CustomerId, $DeviceId, $JobId, $FolderName, $PictureName, $DateAdded, $PictureDate)");
+            const statement = await tx.prepareAsync(`INSERT INTO ${this._tableName} (_id, CustomerId, DeviceId, JobId, AlbumId, AssetId, DateAdded, Longitude, Latitude, PictureDate) ` +
+                " VALUES ($_id, $CustomerId, $DeviceId, $JobId, $AlbumId, $AssetId, $DateAdded, $Longitude, $Latitude, $PictureDate)");
             console.log("Create PictureBucket statement created");
             try {
                 pict._id = await BuildUniqueId(tx, this._customerId);
                 id.value = pict._id;
                 console.log("BuildUniqueId for pictureBucket returned :", pict._id);
                 if (pict._id > -1n) {
-                    await statement.executeAsync(pict._id?.toString(), pict.CustomerId ? pict.CustomerId.toString() : null, pict.DeviceId ? pict.DeviceId.toString() : null, pict.JobId ? pict.JobId.toString() : null, pict.FolderName, pict.PictureName, pict.DateAdded ? pict.DateAdded.toString() : null, pict.PictureDate ? pict.PictureDate.toString() : null);
+                    await statement.executeAsync(pict._id?.toString(), pict.CustomerId ? pict.CustomerId.toString() : null, pict.DeviceId ? pict.DeviceId.toString() : null, pict.JobId ? pict.JobId.toString() : null, pict.AlbumId, pict.AssetId, pict.DateAdded ? pict.DateAdded.toString() : null, pict.Longitude ? pict.Longitude.toString() : null, pict.Latitude ? pict.Latitude.toString() : null, pict.PictureDate ? pict.PictureDate.toString() : null);
                     status = "Success";
                 }
             }
@@ -119,7 +121,7 @@ export class PictureBucketDB {
         }
         let status = "Error";
         await this._db.withExclusiveTransactionAsync(async (tx) => {
-            const statement = await this._db?.prepareAsync(`select _id, CustomerId, DeviceId, JobId, FolderName, PictureName, DateAdded, PictureDate from ${this._tableName} where JobId = $JobId`);
+            const statement = await this._db?.prepareAsync(`select _id, CustomerId, DeviceId, JobId, AlbumId, AssetId, DateAdded, Longitude, Latitude, PictureDate from ${this._tableName} where JobId = $JobId`);
             try {
                 const result = await statement?.executeAsync(jobId.toString());
                 if (result) {
@@ -130,9 +132,11 @@ export class PictureBucketDB {
                                 JobId: BigInt(row.JobId),
                                 DeviceId: BigInt(row.DeviceId),
                                 CustomerId: BigInt(row.CustomerId),
-                                FolderName: row.FolderName,
-                                PictureName: row.PictureName,
+                                AlbumId: row.AlbumId,
+                                AssetId: row.AssetId,
                                 DateAdded: row.DateAdded,
+                                Longitude: row.Longitude,
+                                Latitude: row.Latitude,
                                 PictureDate: row.PictureDate,
                             });
                         }
