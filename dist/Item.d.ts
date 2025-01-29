@@ -4,7 +4,7 @@ import { JobCategoryItemData } from "./interfaces";
 export declare class ItemDB {
     private _db;
     readonly _tableName = "items";
-    private _customerId;
+    private _userId;
     constructor(db: SQLiteDatabase, custId: number);
     CreateItemTable(): DBStatus;
     CreateItem(id: {

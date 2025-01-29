@@ -30,7 +30,7 @@ async function GetNextId(db: SQLiteDatabase): Promise<number> {
     }
 }
 
-export async function BuildUniqueId(db: SQLiteDatabase | null, custId: number): Promise<bigint> {
+export async function BuildUniqueId(db: SQLiteDatabase | null, userId: number): Promise<bigint> {
     let uniqueId: bigint = -1n;
 
     if (!db) {
@@ -43,8 +43,8 @@ export async function BuildUniqueId(db: SQLiteDatabase | null, custId: number): 
         return -1 as unknown as bigint;
     }
 
-    uniqueId = (BigInt(custId) << (32n as bigint)) | BigInt(nextId);
-    console.log(`NextId: ${nextId}, CustomerId: ${custId} => UniqueId: ${uniqueId}`);
+    uniqueId = (BigInt(userId) << (32n as bigint)) | BigInt(nextId);
+    console.log(`NextId: ${nextId}, CustomerId: ${userId} => UniqueId: ${uniqueId}`);
 
     return uniqueId;
 }

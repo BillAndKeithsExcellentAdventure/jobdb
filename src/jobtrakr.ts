@@ -4,14 +4,14 @@ import { CategoryDB } from "./Category";
 import { ItemDB } from "./Item";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
-
+import { JobTrakrSampleData } from "./SampleData";
 export type DBStatus = "Success" | "Error" | "NoChanges";
 
 export class JobTrakrDB {
     private _db: SQLiteDatabase | null;
     private _dbName: string = "jobdb.db";
     //private _logger: DBLogger | null;
-    private _customerId: number;
+    private _userId: number;
     private _jobDB: JobDB | null = null;
     private _categoryDB: CategoryDB | null = null;
     private _itemDB: ItemDB | null = null;
@@ -20,9 +20,9 @@ export class JobTrakrDB {
     // This number MUST be unique for each customer. It is used to ensure that each customer's data is kept separate.
     // This id must be a 32 bit integer and will be placed in the upper 32 bits of the 64 bit primary keys
     // found in all the database tables.
-    public constructor(custId: number) {
+    public constructor(userId: number) {
         console.log("Constructing JobTrakrDB");
-        this._customerId = custId;
+        this._userId = userId;
         this._db = null;
         //this._logger = new DBLogger(new ConsoleLogStrategy());
 
@@ -91,7 +91,7 @@ export class JobTrakrDB {
 
     public GetJobDB(): JobDB {
         if (this._db && !this._jobDB) {
-            this._jobDB = new JobDB(this._db, this._customerId);
+            this._jobDB = new JobDB(this._db, this._userId);
             this._jobDB.CreateJobTable(); // Ensure the Jobs table exists. It will do a "Create if not exists" operation.
         }
 
@@ -104,7 +104,7 @@ export class JobTrakrDB {
 
     public GetCategoryDB(): CategoryDB {
         if (this._db && !this._categoryDB) {
-            this._categoryDB = new CategoryDB(this._db, this._customerId);
+            this._categoryDB = new CategoryDB(this._db, this._userId);
             this._categoryDB.CreateCategoryTable(); // Ensure the Category table exists. It will do a "Create if not exists" operation.
         }
 
@@ -117,7 +117,7 @@ export class JobTrakrDB {
 
     public GetItemDB(): ItemDB {
         if (this._db && !this._itemDB) {
-            this._itemDB = new ItemDB(this._db, this._customerId);
+            this._itemDB = new ItemDB(this._db, this._userId);
             this._itemDB.CreateItemTable(); // Ensure the Item table exists. It will do a "Create if not exists" operation.
         }
 
@@ -127,4 +127,11 @@ export class JobTrakrDB {
 
         return this._itemDB;
     }
+
+    public CreateSampleData = async () => {
+        if (this._db) {
+            const sampleData = new JobTrakrSampleData(this, this._userId);
+            sampleData.CreateSampleData();
+        }
+    };
 }

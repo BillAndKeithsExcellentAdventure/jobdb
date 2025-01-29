@@ -4,8 +4,8 @@ import { JobData } from "./interfaces";
 export declare class JobDB {
     private _db;
     readonly _tableName = "jobs";
-    private _customerId;
-    constructor(db: SQLiteDatabase, custId: number);
+    private _userId;
+    constructor(db: SQLiteDatabase, userId: number);
     CreateJobTable(): DBStatus;
     CreateJob(id: {
         value: bigint;

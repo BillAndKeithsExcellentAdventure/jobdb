@@ -4,7 +4,7 @@ import { JobCategoryData } from "./interfaces";
 export declare class CategoryDB {
     private _db;
     readonly _tableName = "categories";
-    private _customerId;
+    private _userId;
     constructor(db: SQLiteDatabase, custId: number);
     CreateCategoryTable(): DBStatus;
     CreateCategory(id: {

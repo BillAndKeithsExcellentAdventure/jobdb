@@ -6,11 +6,11 @@ export type DBStatus = "Success" | "Error" | "NoChanges";
 export declare class JobTrakrDB {
     private _db;
     private _dbName;
-    private _customerId;
+    private _userId;
     private _jobDB;
     private _categoryDB;
     private _itemDB;
-    constructor(custId: number);
+    constructor(userId: number);
     DeleteDatabase: () => Promise<void>;
     CopyFileToDownloads: () => Promise<void>;
     OpenDatabase(): Promise<DBStatus>;
@@ -19,4 +19,5 @@ export declare class JobTrakrDB {
     GetJobDB(): JobDB;
     GetCategoryDB(): CategoryDB;
     GetItemDB(): ItemDB;
+    CreateSampleData: () => Promise<void>;
 }

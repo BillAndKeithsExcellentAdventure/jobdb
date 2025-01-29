@@ -6,18 +6,18 @@ import { PictureBucketData } from "./interfaces";
 export class PictureBucketDB {
     private _db: SQLiteDatabase | null;
     readonly _tableName = "picturebucket";
-    private _customerId: number;
+    private _userId: number;
 
     public constructor(db: SQLiteDatabase, custId: number) {
         this._db = db;
-        this._customerId = custId;
+        this._userId = custId;
     }
 
     // Create a table if it does not exist
     public CreatePictureBucketTable(): DBStatus {
         this._db?.execSync(
             `CREATE TABLE IF NOT EXISTS ${this._tableName} (_id INTEGER PRIMARY KEY, ` +
-                "CustomerId INTEGER, " +
+                "userId INTEGER, " +
                 "JobId INTEGER, " +
                 "DeviceId INTEGER, " +
                 "AlbumId TEXT, " +
@@ -42,14 +42,14 @@ export class PictureBucketDB {
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             console.log("preparing statement for PictureBucket");
             const statement = await tx.prepareAsync(
-                `INSERT INTO ${this._tableName} (_id, CustomerId, DeviceId, JobId, AlbumId, AssetId, DateAdded, Longitude, Latitude, PictureDate) ` +
-                    " VALUES ($_id, $CustomerId, $DeviceId, $JobId, $AlbumId, $AssetId, $DateAdded, $Longitude, $Latitude, $PictureDate)"
+                `INSERT INTO ${this._tableName} (_id, userId, DeviceId, JobId, AlbumId, AssetId, DateAdded, Longitude, Latitude, PictureDate) ` +
+                    " VALUES ($_id, $userId, $DeviceId, $JobId, $AlbumId, $AssetId, $DateAdded, $Longitude, $Latitude, $PictureDate)"
             );
 
             console.log("Create PictureBucket statement created");
 
             try {
-                pict._id = await BuildUniqueId(tx, this._customerId);
+                pict._id = await BuildUniqueId(tx, this._userId);
 
                 id.value = pict._id;
 
@@ -57,7 +57,7 @@ export class PictureBucketDB {
                 if (pict._id > -1n) {
                     await statement.executeAsync<{
                         _id: string;
-                        CustomerId: string;
+                        UserId: string;
                         DeviceId: string;
                         JobId: string;
                         AlbumId: string;
@@ -68,7 +68,7 @@ export class PictureBucketDB {
                         PictureDate?: Date;
                     }>(
                         pict._id?.toString(),
-                        pict.CustomerId ? pict.CustomerId.toString() : null,
+                        pict.UserId ? pict.UserId.toString() : null,
                         pict.DeviceId ? pict.DeviceId.toString() : null,
                         pict.JobId ? pict.JobId.toString() : null,
                         pict.AlbumId,
@@ -180,13 +180,13 @@ export class PictureBucketDB {
 
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             const statement = await this._db?.prepareAsync(
-                `select _id, CustomerId, DeviceId, JobId, AlbumId, AssetId, DateAdded, Longitude, Latitude, PictureDate from ${this._tableName} where JobId = $JobId`
+                `select _id, userId, DeviceId, JobId, AlbumId, AssetId, DateAdded, Longitude, Latitude, PictureDate from ${this._tableName} where JobId = $JobId`
             );
 
             try {
                 const result = await statement?.executeAsync<{
                     _id: string;
-                    CustomerId: string;
+                    userId: string;
                     DeviceId: string;
                     JobId: string;
                     AlbumId: string;
@@ -204,7 +204,7 @@ export class PictureBucketDB {
                                 _id: BigInt(row._id),
                                 JobId: BigInt(row.JobId),
                                 DeviceId: BigInt(row.DeviceId),
-                                CustomerId: BigInt(row.CustomerId),
+                                UserId: BigInt(row.userId),
                                 AlbumId: row.AlbumId,
                                 AssetId: row.AssetId,
                                 DateAdded: row.DateAdded,

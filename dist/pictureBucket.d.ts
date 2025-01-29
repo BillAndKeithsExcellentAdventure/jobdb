@@ -4,7 +4,7 @@ import { PictureBucketData } from "./interfaces";
 export declare class PictureBucketDB {
     private _db;
     readonly _tableName = "picturebucket";
-    private _customerId;
+    private _userId;
     constructor(db: SQLiteDatabase, custId: number);
     CreatePictureBucketTable(): DBStatus;
     InsertPicture(id: {

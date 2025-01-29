@@ -6,11 +6,11 @@ import { JobCategoryItemData } from "./interfaces";
 export class ItemDB {
     private _db: SQLiteDatabase | null;
     readonly _tableName = "items";
-    private _customerId: number;
+    private _userId: number;
 
     public constructor(db: SQLiteDatabase, custId: number) {
         this._db = db;
-        this._customerId = custId;
+        this._userId = custId;
     }
 
     // Create a table if it does not exist
@@ -45,7 +45,7 @@ export class ItemDB {
             console.log("CreateItem statement created");
 
             try {
-                item._id = await BuildUniqueId(tx, this._customerId);
+                item._id = await BuildUniqueId(tx, this._userId);
 
                 id.value = item._id;
 

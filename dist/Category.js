@@ -2,10 +2,10 @@ import { BuildUniqueId } from "./dbutils";
 export class CategoryDB {
     _db;
     _tableName = "categories";
-    _customerId;
+    _userId;
     constructor(db, custId) {
         this._db = db;
-        this._customerId = custId;
+        this._userId = custId;
     }
     // Create a table if it does not exist
     CreateCategoryTable() {
@@ -30,7 +30,7 @@ export class CategoryDB {
                 " VALUES ($_id, $Code, $JobId, $CategoryName, $EstPrice, $CategoryStatus)");
             console.log("CreateCategory statement created");
             try {
-                cat._id = await BuildUniqueId(tx, this._customerId);
+                cat._id = await BuildUniqueId(tx, this._userId);
                 id.value = cat._id;
                 console.log("BuildUniqueId for category returned :", cat._id);
                 if (cat._id > -1n) {

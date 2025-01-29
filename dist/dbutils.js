@@ -22,7 +22,7 @@ async function GetNextId(db) {
         return -1;
     }
 }
-export async function BuildUniqueId(db, custId) {
+export async function BuildUniqueId(db, userId) {
     let uniqueId = -1n;
     if (!db) {
         return -1;
@@ -31,7 +31,7 @@ export async function BuildUniqueId(db, custId) {
     if (nextId === -1) {
         return -1;
     }
-    uniqueId = (BigInt(custId) << 32n) | BigInt(nextId);
-    console.log(`NextId: ${nextId}, CustomerId: ${custId} => UniqueId: ${uniqueId}`);
+    uniqueId = (BigInt(userId) << 32n) | BigInt(nextId);
+    console.log(`NextId: ${nextId}, CustomerId: ${userId} => UniqueId: ${uniqueId}`);
     return uniqueId;
 }

@@ -3,7 +3,7 @@ export interface JobData {
     Code: string | null;
     Name: string | null;
     JobTypeId: bigint | null;
-    CustomerId: bigint | null;
+    UserId: number | null;
     JobLocation: string | null;
     StartDate?: Date;
     PlannedFinish?: Date;
@@ -34,7 +34,7 @@ export interface JobCategoryItemData {
 
 export interface PictureBucketData {
     _id: bigint | null;
-    CustomerId: bigint | null;
+    UserId: bigint | null;
     JobId: bigint | null;
     DeviceId: bigint | null;
     AlbumId: string | null;
