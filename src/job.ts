@@ -28,6 +28,7 @@ export class JobDB {
                 "Longitude NUMBER, " +
                 "Latitude NUMBER, " +
                 "Radius NUMBER, " +
+                "Thumbnail TEXT, " +
                 "JobStatus TEXT)"
         );
 
@@ -45,8 +46,8 @@ export class JobDB {
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             console.log("preparing job statement for user: ", this._userId);
             const statement = await tx.prepareAsync(
-                `INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, UserId, JobLocation, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, JobStatus) ` +
-                    " VALUES ($_id, $Code, $Name, $JobTypeId, $UserId, $JobLocation, $StartDate, $PlannedFinish, $BidPrice, $Longitude, $Latitude, $Radius, $JobStatus)"
+                `INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, UserId, JobLocation, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, Thumbnail, JobStatus) ` +
+                    " VALUES ($_id, $Code, $Name, $JobTypeId, $UserId, $JobLocation, $StartDate, $PlannedFinish, $BidPrice, $Longitude, $Latitude, $Radius, $Thumbnail, $JobStatus)"
             );
 
             console.log("CreateJob statement created");
@@ -71,6 +72,7 @@ export class JobDB {
                         Longitude?: number;
                         Latitude?: number;
                         Radius?: number;
+                        Thumbnail?: string;
                         JobStatus: string;
                     }>(
                         job._id?.toString(),
@@ -85,6 +87,7 @@ export class JobDB {
                         job.Longitude ? job.Longitude.toString() : null,
                         job.Latitude ? job.Latitude.toString() : null,
                         job.Radius ? job.Radius.toString() : null,
+                        job.Thumbnail ? job.Thumbnail.toString() : null,
                         job.JobStatus
                     );
 
@@ -221,6 +224,44 @@ export class JobDB {
         return status;
     }
 
+    public async UpdateThumbnail(thumbnailInBase64: string | undefined, id: bigint): Promise<DBStatus> {
+        if (!this._db) {
+            return "Error";
+        }
+
+        let status: DBStatus = "Error";
+
+        console.log("Updating thumbnail for job:", id);
+        await this._db.withExclusiveTransactionAsync(async (tx) => {
+            const statement = await tx.prepareAsync(
+                `update ${this._tableName} set ` + " Thumbnail = $Thumbnail" + " where _id = $_id"
+            );
+
+            try {
+                let result = await statement.executeAsync<{
+                    Thumbnail?: string;
+                    _id: string;
+                }>(thumbnailInBase64 ? thumbnailInBase64 : null, id ? id.toString() : null);
+
+                if (result.changes > 0) {
+                    console.log(`Job thumbnail updated: ${id}. Changes = ${result.changes}`);
+                    status = "Success";
+                } else {
+                    console.log(`Job thumbnail updated: ${id}. Changes = ${result.changes}`);
+                    status = "NoChanges";
+                }
+            } catch (error) {
+                console.error("Error updating job thumbnail:", error);
+                status = "Error";
+            } finally {
+                statement.finalizeAsync();
+            }
+        });
+
+        console.log("Returning from thumbnail update statement:", id);
+        return status;
+    }
+
     public async DeleteJob(id: bigint): Promise<DBStatus> {
         if (!this._db) {
             return "Error";
@@ -259,6 +300,35 @@ export class JobDB {
         return status;
     }
 
+    public async FetchThumbnail(id: number): Promise<string | undefined> {
+        if (!this._db) {
+            return undefined;
+        }
+
+        let thumbnail: string | undefined = undefined;
+
+        await this._db.withExclusiveTransactionAsync(async (tx) => {
+            const statement = await this._db?.prepareAsync(`select thumbnail from ${this._tableName} where _id = $id`);
+
+            try {
+                const result = await statement?.executeAsync<{
+                    thumbnail: string | undefined;
+                    _id: string;
+                }>(id.toString());
+
+                if (result) {
+                    await result.getFirstAsync().then((row) => (thumbnail = row?.thumbnail));
+                }
+            } catch (error) {
+                console.error("Error fetching thumbnail:", error);
+            } finally {
+                statement?.finalizeAsync();
+            }
+        });
+
+        return thumbnail;
+    }
+
     public async FetchAllJobs(jobs: JobData[]): Promise<DBStatus> {
         if (!this._db) {
             return "Error";
@@ -268,7 +338,7 @@ export class JobDB {
 
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             const statement = await this._db?.prepareAsync(
-                `select _id, code, name, JobTypeId, UserId, JobLocation, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, JobStatus from ${this._tableName}`
+                `select _id, code, name, JobTypeId, UserId, JobLocation, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, Thumbnail, JobStatus from ${this._tableName}`
             );
 
             try {
@@ -285,6 +355,7 @@ export class JobDB {
                     Longitude?: number;
                     Latitude?: number;
                     Radius?: number;
+                    Thumbnail?: string | undefined;
                     JobStatus: string;
                 }>();
 
@@ -304,6 +375,7 @@ export class JobDB {
                                 Longitude: row.Longitude,
                                 Latitude: row.Latitude,
                                 Radius: row.Radius,
+                                Thumbnail: row.Thumbnail,
                                 JobStatus: row.JobStatus,
                             });
                         }

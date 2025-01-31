@@ -126,6 +126,7 @@ export class JobTrakrSampleData {
                 Longitude: 32.0,
                 Latitude: -89.0,
                 Radius: 500.0,
+                Thumbnail: undefined,
                 JobStatus: "Active",
             });
 
@@ -146,6 +147,7 @@ export class JobTrakrSampleData {
                 Longitude: 31.0,
                 Latitude: -89.0,
                 Radius: 500.0,
+                Thumbnail: undefined,
                 JobStatus: "Active",
             });
 
@@ -166,6 +168,7 @@ export class JobTrakrSampleData {
                 Longitude: 34.0,
                 Latitude: -89.0,
                 Radius: 500.0,
+                Thumbnail: undefined,
                 JobStatus: "Active",
             });
 

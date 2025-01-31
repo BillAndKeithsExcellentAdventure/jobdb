@@ -11,6 +11,7 @@ export interface JobData {
     Longitude?: number;
     Latitude?: number;
     Radius?: number;
+    Thumbnail: string | undefined;
     JobStatus: string | null;
 }
 export interface JobCategoryData {
