@@ -108,6 +108,7 @@ export class JobTrakrSampleData {
                 Thumbnail: undefined,
                 JobStatus: "Active",
             });
+            console.log("Create Job Status: ", createStatus);
             if (createStatus === "Success") {
                 await this.CreateSampleCategories(newId.value);
             }
@@ -127,6 +128,7 @@ export class JobTrakrSampleData {
                 Thumbnail: undefined,
                 JobStatus: "Active",
             });
+            console.log("Create Job Status: ", createStatus);
             if (createStatus === "Success") {
                 await this.CreateSampleCategories(newId.value);
             }
@@ -146,6 +148,7 @@ export class JobTrakrSampleData {
                 Thumbnail: undefined,
                 JobStatus: "Active",
             });
+            console.log("Create Job Status: ", createStatus);
             if (createStatus === "Success") {
                 await this.CreateSampleCategories(newId.value);
             }
