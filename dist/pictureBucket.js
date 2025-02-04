@@ -1,4 +1,5 @@
 import { BuildUniqueId } from "./dbutils";
+import * as MediaLibrary from "expo-media-library";
 export class PictureBucketDB {
     _db;
     _tableName = "picturebucket";
@@ -18,14 +19,34 @@ export class PictureBucketDB {
             "Longitude NUMBER, " +
             "Latitude NUMBER, " +
             "DateAdded Date, " +
-            "PictureDate Date");
+            "PictureDate Date)");
         return "Success";
     }
-    async InsertPicture(id, pict) {
+    async GetAssetLatLong(photoAsset) {
+        try {
+            const asset = await MediaLibrary.getAssetInfoAsync(photoAsset.id);
+            if (asset && asset.location) {
+                const { latitude, longitude } = asset.location;
+                console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+                return { Latitude: latitude, Longitude: longitude };
+            }
+            else {
+                console.log("Location information is not available for this asset.");
+                return null;
+            }
+        }
+        catch (error) {
+            console.error("Error fetching asset location:", error);
+            return null;
+        }
+    }
+    async InsertPicture(id, jobId, asset) {
         if (!this._db) {
             return "Error";
         }
-        console.log("Inserting picture:", pict);
+        const location = await this.GetAssetLatLong(asset);
+        console.log("Inserting picture asset:", asset);
+        console.log(`    Location: ${location?.Latitude}, ${location?.Longitude}`);
         let status = "Error";
         await this._db.withExclusiveTransactionAsync(async (tx) => {
             console.log("preparing statement for PictureBucket");
@@ -33,11 +54,12 @@ export class PictureBucketDB {
                 " VALUES ($_id, $userId, $DeviceId, $JobId, $AlbumId, $AssetId, $DateAdded, $Longitude, $Latitude, $PictureDate)");
             console.log("Create PictureBucket statement created");
             try {
-                pict._id = await BuildUniqueId(tx, this._userId);
-                id.value = pict._id;
-                console.log("BuildUniqueId for pictureBucket returned :", pict._id);
-                if (pict._id > -1n) {
-                    await statement.executeAsync(pict._id?.toString(), pict.UserId ? pict.UserId.toString() : null, pict.DeviceId ? pict.DeviceId.toString() : null, pict.JobId ? pict.JobId.toString() : null, pict.AlbumId, pict.AssetId, pict.DateAdded ? pict.DateAdded.toString() : null, pict.Longitude ? pict.Longitude.toString() : null, pict.Latitude ? pict.Latitude.toString() : null, pict.PictureDate ? pict.PictureDate.toString() : null);
+                id.value = await BuildUniqueId(tx, this._userId);
+                const currentDate = new Date();
+                console.log("BuildUniqueId for pictureBucket returned :", id.value);
+                if (id.value > -1n) {
+                    await statement.executeAsync(id.value.toString(), this._userId ? this._userId.toString() : null, null, // TODO: Fill in DeviceId
+                    jobId ? jobId.toString() : null, asset.albumId ? asset.albumId : null, asset.id ? asset.id : null, currentDate ? currentDate.toString() : null, location?.Longitude ? location.Longitude.toString() : null, location?.Latitude ? location.Latitude.toString() : null, asset.creationTime ? asset.creationTime.toString() : null);
                     status = "Success";
                 }
             }

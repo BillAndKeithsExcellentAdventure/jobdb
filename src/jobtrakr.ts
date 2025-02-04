@@ -2,19 +2,24 @@ import { SQLiteDatabase, openDatabaseAsync } from "expo-sqlite"; // Use 'react-n
 import { JobDB } from "./job";
 import { CategoryDB } from "./Category";
 import { ItemDB } from "./Item";
+import { PictureBucketDB } from "./pictureBucket";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { JobTrakrSampleData } from "./SampleData";
+import { DeviceDB } from "./device";
 export type DBStatus = "Success" | "Error" | "NoChanges";
 
 export class JobTrakrDB {
     private _db: SQLiteDatabase | null;
     private _dbName: string = "jobdb.db";
     //private _logger: DBLogger | null;
+    private _deviceId: bigint | undefined = undefined;
     private _userId: number;
     private _jobDB: JobDB | null = null;
     private _categoryDB: CategoryDB | null = null;
     private _itemDB: ItemDB | null = null;
+    private _pictureBucketDB: PictureBucketDB | null = null;
+    private _deviceDB: DeviceDB | null = null;
 
     // custId is the customer ID obtained from the OAuth2 login process.
     // This number MUST be unique for each customer. It is used to ensure that each customer's data is kept separate.
@@ -74,11 +79,26 @@ export class JobTrakrDB {
                 this.CreateAutoIncrementTable();
             }
 
+            // Get the database id for this device.
+            const id: { value: bigint | undefined } = { value: undefined };
+            const status: DBStatus = await this.GetDeviceDB().GetDeviceId(id);
+            if (status === "Success") {
+                this._deviceId = id.value;
+            }
+
             return this._db ? "Success" : "Error";
         } catch (error) {
             //this._logger?.log(`Error opening database: ${error}`);
             return "Error";
         }
+    }
+
+    public GetDeviceId(): bigint | undefined {
+        return this._deviceId;
+    }
+
+    public GetUserId(): number | undefined {
+        return this._userId;
     }
 
     public GetDb(): SQLiteDatabase | null {
@@ -126,6 +146,32 @@ export class JobTrakrDB {
         }
 
         return this._itemDB;
+    }
+
+    public GetPictureBucketDB(): PictureBucketDB {
+        if (this._db && !this._pictureBucketDB) {
+            this._pictureBucketDB = new PictureBucketDB(this, this._userId);
+            this._pictureBucketDB?.CreatePictureBucketTable(); // Ensure the PictureBucket table exists. It will do a "Create if not exists" operation.
+        }
+
+        if (!this._pictureBucketDB) {
+            throw new Error("PictureBucketDB is not initialized");
+        }
+
+        return this._pictureBucketDB;
+    }
+
+    public GetDeviceDB(): DeviceDB {
+        if (this._db && !this._deviceDB) {
+            this._deviceDB = new DeviceDB(this._db, this._userId);
+            this._deviceDB?.CreateDeviceTable(); // Ensure the PictureBucket table exists. It will do a "Create if not exists" operation.
+        }
+
+        if (!this._deviceDB) {
+            throw new Error("DeviceDB is not initialized");
+        }
+
+        return this._deviceDB;
     }
 
     public CreateSampleData = async () => {

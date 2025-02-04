@@ -20,8 +20,11 @@
     "dependencies": {
         "@expo/metro-runtime": "~4.0.1",
         "expo": "^52.0.27",
+        "expo-application": "^6.0.2",
+        "expo-device": "^7.0.2",
         "expo-sharing": "^13.0.1",
         "expo-sqlite": "~15.0.6",
+        "jobmedia": "^1.0.5",
         "react-dom": "18.3.1",
         "react-native": "0.76.6",
         "react-native-sqlite-storage": "^6.0.1",

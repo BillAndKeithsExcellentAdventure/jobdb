@@ -1,15 +1,18 @@
 import { SQLiteDatabase, openDatabaseAsync } from "expo-sqlite"; // Use 'react-native-sqlite-storage' if using React Native
-import { DBStatus } from "./jobtrakr";
+import { JobTrakrDB, DBStatus } from "./jobtrakr";
 import { BuildUniqueId } from "./dbutils";
 import { PictureBucketData } from "./interfaces";
+import * as MediaLibrary from "expo-media-library";
 
 export class PictureBucketDB {
     private _db: SQLiteDatabase | null;
+    private _jobTrakrDB: JobTrakrDB | null;
     readonly _tableName = "picturebucket";
     private _userId: number;
 
-    public constructor(db: SQLiteDatabase, custId: number) {
-        this._db = db;
+    public constructor(jt: JobTrakrDB, custId: number) {
+        this._jobTrakrDB = jt;
+        this._db = jt.GetDb();
         this._userId = custId;
     }
 
@@ -25,17 +28,40 @@ export class PictureBucketDB {
                 "Longitude NUMBER, " +
                 "Latitude NUMBER, " +
                 "DateAdded Date, " +
-                "PictureDate Date"
+                "PictureDate Date)"
         );
 
         return "Success";
     }
 
-    public async InsertPicture(id: { value: bigint }, pict: PictureBucketData): Promise<DBStatus> {
+    private async GetAssetLatLong(
+        photoAsset: MediaLibrary.Asset
+    ): Promise<{ Latitude: number; Longitude: number } | null> {
+        try {
+            const asset = await MediaLibrary.getAssetInfoAsync(photoAsset.id);
+            if (asset && asset.location) {
+                const { latitude, longitude } = asset.location;
+                console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+                return { Latitude: latitude, Longitude: longitude };
+            } else {
+                console.log("Location information is not available for this asset.");
+                return null;
+            }
+        } catch (error) {
+            console.error("Error fetching asset location:", error);
+            return null;
+        }
+    }
+
+    public async InsertPicture(id: { value: bigint }, jobId: bigint, asset: MediaLibrary.Asset): Promise<DBStatus> {
         if (!this._db) {
             return "Error";
         }
-        console.log("Inserting picture:", pict);
+
+        const location: { Latitude: number; Longitude: number } | null = await this.GetAssetLatLong(asset);
+
+        console.log("Inserting picture asset:", asset);
+        console.log(`    Location: ${location?.Latitude}, ${location?.Longitude}`);
 
         let status: DBStatus = "Error";
 
@@ -49,12 +75,15 @@ export class PictureBucketDB {
             console.log("Create PictureBucket statement created");
 
             try {
-                pict._id = await BuildUniqueId(tx, this._userId);
+                id.value = await BuildUniqueId(tx, this._userId);
 
-                id.value = pict._id;
+                const currentDate = new Date();
+                const deviceId: string | undefined = this._jobTrakrDB?.GetDeviceId()
+                    ? this._jobTrakrDB?.GetDeviceId()?.toString()
+                    : undefined;
 
-                console.log("BuildUniqueId for pictureBucket returned :", pict._id);
-                if (pict._id > -1n) {
+                console.log("BuildUniqueId for pictureBucket returned :", id.value);
+                if (id.value > -1n) {
                     await statement.executeAsync<{
                         _id: string;
                         UserId: string;
@@ -67,16 +96,16 @@ export class PictureBucketDB {
                         Latitude?: number;
                         PictureDate?: Date;
                     }>(
-                        pict._id?.toString(),
-                        pict.UserId ? pict.UserId.toString() : null,
-                        pict.DeviceId ? pict.DeviceId.toString() : null,
-                        pict.JobId ? pict.JobId.toString() : null,
-                        pict.AlbumId,
-                        pict.AssetId,
-                        pict.DateAdded ? pict.DateAdded.toString() : null,
-                        pict.Longitude ? pict.Longitude.toString() : null,
-                        pict.Latitude ? pict.Latitude.toString() : null,
-                        pict.PictureDate ? pict.PictureDate.toString() : null
+                        id.value.toString(),
+                        this._userId ? this._userId.toString() : null,
+                        deviceId ? deviceId : null,
+                        jobId ? jobId.toString() : null,
+                        asset.albumId ? asset.albumId : null,
+                        asset.id ? asset.id : null,
+                        currentDate ? currentDate.toString() : null,
+                        location?.Longitude ? location.Longitude.toString() : null,
+                        location?.Latitude ? location.Latitude.toString() : null,
+                        asset.creationTime ? asset.creationTime.toString() : null
                     );
 
                     status = "Success";

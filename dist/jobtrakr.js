@@ -2,17 +2,22 @@ import { openDatabaseAsync } from "expo-sqlite"; // Use 'react-native-sqlite-sto
 import { JobDB } from "./job";
 import { CategoryDB } from "./Category";
 import { ItemDB } from "./Item";
+import { PictureBucketDB } from "./pictureBucket";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { JobTrakrSampleData } from "./SampleData";
+import { DeviceDB } from "./device";
 export class JobTrakrDB {
     _db;
     _dbName = "jobdb.db";
     //private _logger: DBLogger | null;
+    _deviceId = undefined;
     _userId;
     _jobDB = null;
     _categoryDB = null;
     _itemDB = null;
+    _pictureBucketDB = null;
+    _deviceDB = null;
     // custId is the customer ID obtained from the OAuth2 login process.
     // This number MUST be unique for each customer. It is used to ensure that each customer's data is kept separate.
     // This id must be a 32 bit integer and will be placed in the upper 32 bits of the 64 bit primary keys
@@ -65,6 +70,12 @@ export class JobTrakrDB {
             if (this._db) {
                 this.CreateAutoIncrementTable();
             }
+            // Get the database id for this device.
+            const id = { value: undefined };
+            const status = await this.GetDeviceDB().GetDeviceId(id);
+            if (status === "Success") {
+                this._deviceId = id.value;
+            }
             return this._db ? "Success" : "Error";
         }
         catch (error) {
@@ -107,6 +118,26 @@ export class JobTrakrDB {
             throw new Error("ItemDB is not initialized");
         }
         return this._itemDB;
+    }
+    GetPictureBucketDB() {
+        if (this._db && !this._pictureBucketDB) {
+            this._pictureBucketDB = new PictureBucketDB(this._db, this._userId);
+            this._pictureBucketDB?.CreatePictureBucketTable(); // Ensure the PictureBucket table exists. It will do a "Create if not exists" operation.
+        }
+        if (!this._pictureBucketDB) {
+            throw new Error("PictureBucketDB is not initialized");
+        }
+        return this._pictureBucketDB;
+    }
+    GetDeviceDB() {
+        if (this._db && !this._deviceDB) {
+            this._deviceDB = new DeviceDB(this._db, this._userId);
+            this._deviceDB?.CreateDeviceTable(); // Ensure the PictureBucket table exists. It will do a "Create if not exists" operation.
+        }
+        if (!this._deviceDB) {
+            throw new Error("DeviceDB is not initialized");
+        }
+        return this._deviceDB;
     }
     CreateSampleData = async () => {
         if (this._db) {

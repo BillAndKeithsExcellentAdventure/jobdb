@@ -2,14 +2,19 @@ import { SQLiteDatabase } from "expo-sqlite";
 import { JobDB } from "./job";
 import { CategoryDB } from "./Category";
 import { ItemDB } from "./Item";
+import { PictureBucketDB } from "./pictureBucket";
+import { DeviceDB } from "./device";
 export type DBStatus = "Success" | "Error" | "NoChanges";
 export declare class JobTrakrDB {
     private _db;
     private _dbName;
+    private _deviceId;
     private _userId;
     private _jobDB;
     private _categoryDB;
     private _itemDB;
+    private _pictureBucketDB;
+    private _deviceDB;
     constructor(userId: number);
     DeleteDatabase: () => Promise<void>;
     CopyFileToDownloads: () => Promise<void>;
@@ -19,5 +24,7 @@ export declare class JobTrakrDB {
     GetJobDB(): JobDB;
     GetCategoryDB(): CategoryDB;
     GetItemDB(): ItemDB;
+    GetPictureBucketDB(): PictureBucketDB;
+    GetDeviceDB(): DeviceDB;
     CreateSampleData: () => Promise<void>;
 }
