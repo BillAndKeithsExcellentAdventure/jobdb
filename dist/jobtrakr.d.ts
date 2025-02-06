@@ -19,6 +19,8 @@ export declare class JobTrakrDB {
     DeleteDatabase: () => Promise<void>;
     CopyFileToDownloads: () => Promise<void>;
     OpenDatabase(): Promise<DBStatus>;
+    GetDeviceId(): bigint | undefined;
+    GetUserId(): number | undefined;
     GetDb(): SQLiteDatabase | null;
     CreateAutoIncrementTable(): void;
     GetJobDB(): JobDB;

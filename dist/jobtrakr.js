@@ -83,6 +83,12 @@ export class JobTrakrDB {
             return "Error";
         }
     }
+    GetDeviceId() {
+        return this._deviceId;
+    }
+    GetUserId() {
+        return this._userId;
+    }
     GetDb() {
         return this._db;
     }
@@ -121,7 +127,7 @@ export class JobTrakrDB {
     }
     GetPictureBucketDB() {
         if (this._db && !this._pictureBucketDB) {
-            this._pictureBucketDB = new PictureBucketDB(this._db, this._userId);
+            this._pictureBucketDB = new PictureBucketDB(this, this._userId);
             this._pictureBucketDB?.CreatePictureBucketTable(); // Ensure the PictureBucket table exists. It will do a "Create if not exists" operation.
         }
         if (!this._pictureBucketDB) {

@@ -2,10 +2,12 @@ import { BuildUniqueId } from "./dbutils";
 import * as MediaLibrary from "expo-media-library";
 export class PictureBucketDB {
     _db;
+    _jobTrakrDB;
     _tableName = "picturebucket";
     _userId;
-    constructor(db, custId) {
-        this._db = db;
+    constructor(jt, custId) {
+        this._jobTrakrDB = jt;
+        this._db = jt.GetDb();
         this._userId = custId;
     }
     // Create a table if it does not exist
@@ -56,10 +58,12 @@ export class PictureBucketDB {
             try {
                 id.value = await BuildUniqueId(tx, this._userId);
                 const currentDate = new Date();
+                const deviceId = this._jobTrakrDB?.GetDeviceId()
+                    ? this._jobTrakrDB?.GetDeviceId()?.toString()
+                    : undefined;
                 console.log("BuildUniqueId for pictureBucket returned :", id.value);
                 if (id.value > -1n) {
-                    await statement.executeAsync(id.value.toString(), this._userId ? this._userId.toString() : null, null, // TODO: Fill in DeviceId
-                    jobId ? jobId.toString() : null, asset.albumId ? asset.albumId : null, asset.id ? asset.id : null, currentDate ? currentDate.toString() : null, location?.Longitude ? location.Longitude.toString() : null, location?.Latitude ? location.Latitude.toString() : null, asset.creationTime ? asset.creationTime.toString() : null);
+                    await statement.executeAsync(id.value.toString(), this._userId ? this._userId.toString() : null, deviceId ? deviceId : null, jobId ? jobId.toString() : null, asset.albumId ? asset.albumId : null, asset.id ? asset.id : null, currentDate ? currentDate.toString() : null, location?.Longitude ? location.Longitude.toString() : null, location?.Latitude ? location.Latitude.toString() : null, asset.creationTime ? asset.creationTime.toString() : null);
                     status = "Success";
                 }
             }
@@ -137,7 +141,53 @@ export class PictureBucketDB {
         console.log("Returning from delete statement:", id);
         return status;
     }
-    async FetchAllPictures(jobId, pictures) {
+    async getAssetById(assetId, albumId) {
+        try {
+            const asset = await MediaLibrary.getAssetInfoAsync(assetId);
+            if (asset && asset.albumId === albumId) {
+                return asset;
+            }
+            return null;
+        }
+        catch (error) {
+            console.error(`Error fetching asset by ID: ${error}`);
+            return null;
+        }
+    }
+    async FetchJobAssets(jobId, assets) {
+        if (!this._db) {
+            return "Error";
+        }
+        let status = "Error";
+        await this._db.withExclusiveTransactionAsync(async (tx) => {
+            const statement = await this._db?.prepareAsync(`select AlbumId, AssetId from ${this._tableName} where JobId = $JobId`);
+            try {
+                if (jobId) {
+                    const result = await statement?.executeAsync(jobId?.toString());
+                    if (result) {
+                        await result.getAllAsync().then(async (rows) => {
+                            for (const row of rows) {
+                                const asset = await this.getAssetById(row.AssetId, row.AlbumId);
+                                if (asset) {
+                                    assets?.push(asset);
+                                }
+                            }
+                        });
+                    }
+                }
+                status = "Success";
+            }
+            catch (error) {
+                console.error("Error fetching assets:", error);
+                status = "Error";
+            }
+            finally {
+                statement?.finalizeAsync();
+            }
+        });
+        return status;
+    }
+    async FetchJobPictures(jobId, pictures) {
         if (!this._db) {
             return "Error";
         }

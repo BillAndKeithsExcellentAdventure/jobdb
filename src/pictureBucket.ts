@@ -200,7 +200,62 @@ export class PictureBucketDB {
         return status;
     }
 
-    public async FetchAllPictures(jobId: bigint, pictures: PictureBucketData[]): Promise<DBStatus> {
+    private async getAssetById(assetId: string, albumId: string): Promise<MediaLibrary.Asset | null> {
+        try {
+            const asset = await MediaLibrary.getAssetInfoAsync(assetId);
+            if (asset && asset.albumId === albumId) {
+                return asset;
+            }
+            return null;
+        } catch (error) {
+            console.error(`Error fetching asset by ID: ${error}`);
+            return null;
+        }
+    }
+
+    public async FetchJobAssets(jobId: bigint | null, assets: MediaLibrary.Asset[] | null): Promise<DBStatus> {
+        if (!this._db) {
+            return "Error";
+        }
+
+        let status: DBStatus = "Error";
+
+        await this._db.withExclusiveTransactionAsync(async (tx) => {
+            const statement = await this._db?.prepareAsync(
+                `select AlbumId, AssetId from ${this._tableName} where JobId = $JobId`
+            );
+
+            try {
+                if (jobId) {
+                    const result = await statement?.executeAsync<{
+                        AlbumId: string;
+                        AssetId: string;
+                    }>(jobId?.toString());
+
+                    if (result) {
+                        await result.getAllAsync().then(async (rows) => {
+                            for (const row of rows) {
+                                const asset = await this.getAssetById(row.AssetId, row.AlbumId);
+                                if (asset) {
+                                    assets?.push(asset);
+                                }
+                            }
+                        });
+                    }
+                }
+                status = "Success";
+            } catch (error) {
+                console.error("Error fetching assets:", error);
+                status = "Error";
+            } finally {
+                statement?.finalizeAsync();
+            }
+        });
+
+        return status;
+    }
+
+    public async FetchJobPictures(jobId: bigint, pictures: PictureBucketData[]): Promise<DBStatus> {
         if (!this._db) {
             return "Error";
         }
