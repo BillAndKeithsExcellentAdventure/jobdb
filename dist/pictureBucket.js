@@ -160,10 +160,11 @@ export class PictureBucketDB {
         }
         let status = "Error";
         await this._db.withExclusiveTransactionAsync(async (tx) => {
-            const statement = await this._db?.prepareAsync(`select AlbumId, AssetId from ${this._tableName} where JobId = $JobId`);
+            const statement = await this._db?.prepareAsync(`select AlbumId, AssetId from ${this._tableName} where JobId = $JobId and DeviceId = $DeviceId`);
             try {
                 if (jobId) {
-                    const result = await statement?.executeAsync(jobId?.toString());
+                    const deviceId = this._jobTrakrDB?.GetDeviceId()?.toString() || "";
+                    const result = await statement?.executeAsync(jobId?.toString(), deviceId);
                     if (result) {
                         await result.getAllAsync().then(async (rows) => {
                             for (const row of rows) {
