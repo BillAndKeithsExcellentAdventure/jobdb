@@ -92,9 +92,8 @@ export class JobTrakrDB {
         this._deviceId = id.value;
 
         if (createSample) {
-          const jobs: JobData[] = [];
-          const jobStatus = await this.GetJobDB().FetchAllJobs(jobs);
-          if (jobStatus === 'Success' && jobs.length === 0) {
+          const jobs = await this.GetJobDB().FetchAllJobs();
+          if (jobs.status === 'Success' && jobs.jobs.length === 0) {
             await this.CreateSampleData();
           }
         }
