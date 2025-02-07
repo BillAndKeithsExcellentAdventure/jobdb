@@ -359,10 +359,12 @@ export class JobDB {
     return thumbnail;
   }
 
-  public async FetchAllJobs(jobs: JobData[]): Promise<DBStatus> {
+  public async FetchAllJobs(): Promise<{ jobs: JobData[]; status: DBStatus }> {
     if (!this._db) {
-      return 'Error';
+      return { jobs: [], status: 'Error' };
     }
+
+    let jobs: JobData[] = [];
 
     let status: DBStatus = 'Error';
 
@@ -421,6 +423,6 @@ export class JobDB {
       }
     });
 
-    return status;
+    return { jobs, status };
   }
 }
