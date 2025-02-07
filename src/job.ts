@@ -368,7 +368,8 @@ export class JobDB {
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
-        `select _id, code, name, JobTypeId, UserId, JobLocation, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, Thumbnail, JobStatus from ${this._tableName}`,
+        `select _id, code, name, JobTypeId, UserId, JobLocation, StartDate, PlannedFinish, BidPrice, Longitude, ` +
+          ` Latitude, Radius, Thumbnail, JobStatus from ${this._tableName} where UserId = $UserId`,
       );
 
       try {
@@ -387,7 +388,7 @@ export class JobDB {
           Radius?: number;
           Thumbnail?: string | undefined;
           JobStatus: string;
-        }>();
+        }>(this._userId.toString());
 
         if (result) {
           await result.getAllAsync().then((rows) => {

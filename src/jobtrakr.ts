@@ -7,6 +7,8 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { JobTrakrSampleData } from './SampleData';
 import { DeviceDB } from './device';
+import { JobData } from './interfaces';
+
 export type DBStatus = 'Success' | 'Error' | 'NoChanges';
 
 export class JobTrakrDB {
@@ -75,7 +77,7 @@ export class JobTrakrDB {
     }
   };
 
-  public async OpenDatabase(): Promise<DBStatus> {
+  public async OpenDatabase(createSample: boolean = false): Promise<DBStatus> {
     try {
       console.log(`Opening database ${this._dbName}`);
       this._db = await openDatabaseAsync(this._dbName);
@@ -88,6 +90,14 @@ export class JobTrakrDB {
       const status: DBStatus = await this.GetDeviceDB().GetDeviceId(id);
       if (status === 'Success') {
         this._deviceId = id.value;
+
+        if (createSample) {
+          const jobs: JobData[] = [];
+          const jobStatus = await this.GetJobDB().FetchAllJobs(jobs);
+          if (jobStatus === 'Success' && jobs.length === 0) {
+            await this.CreateSampleData();
+          }
+        }
       }
 
       return this._db ? 'Success' : 'Error';
