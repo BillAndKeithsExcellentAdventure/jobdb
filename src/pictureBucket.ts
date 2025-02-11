@@ -8,12 +8,12 @@ export class PictureBucketDB {
   private _db: SQLiteDatabase | null;
   private _jobTrakrDB: JobTrakrDB | null;
   readonly _tableName = 'picturebucket';
-  private _userId: number;
+  private _userId: number | undefined;
 
-  public constructor(jt: JobTrakrDB, custId: number) {
+  public constructor(jt: JobTrakrDB) {
     this._jobTrakrDB = jt;
     this._db = jt.GetDb();
-    this._userId = custId;
+    this._userId = jt.GetUserId();
   }
 
   // Create a table if it does not exist
@@ -54,12 +54,11 @@ export class PictureBucketDB {
   }
 
   public async InsertPicture(
-    id: { value: bigint },
     jobId: bigint,
     asset: MediaLibrary.Asset,
-  ): Promise<DBStatus> {
+  ): Promise<{ status: DBStatus; id: string }> {
     if (!this._db) {
-      return 'Error';
+      return { status: 'Error', id: '0' };
     }
 
     const location: { Latitude: number; Longitude: number } | null =
@@ -69,6 +68,7 @@ export class PictureBucketDB {
     console.log(`    Location: ${location?.Latitude}, ${location?.Longitude}`);
 
     let status: DBStatus = 'Error';
+    let id: string | undefined = '0';
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       console.log('preparing statement for PictureBucket');
@@ -80,40 +80,43 @@ export class PictureBucketDB {
       console.log('Create PictureBucket statement created');
 
       try {
-        id.value = await BuildUniqueId(tx, this._userId);
+        if (this._userId) {
+          let uid = await BuildUniqueId(tx, this._userId);
+          id = uid.toString();
 
-        const currentDate = new Date();
-        const deviceId: string | undefined = this._jobTrakrDB?.GetDeviceId()
-          ? this._jobTrakrDB?.GetDeviceId()?.toString()
-          : undefined;
+          const currentDate = new Date();
+          const deviceId: string | undefined = this._jobTrakrDB?.GetDeviceId()
+            ? this._jobTrakrDB?.GetDeviceId()?.toString()
+            : undefined;
 
-        console.log('BuildUniqueId for pictureBucket returned :', id.value);
-        if (id.value > -1n) {
-          await statement.executeAsync<{
-            _id: string;
-            UserId: string;
-            DeviceId: string;
-            JobId: string;
-            AlbumId: string;
-            AssetId: string;
-            DateAdded?: Date;
-            Longitude?: number;
-            Latitude?: number;
-            PictureDate?: Date;
-          }>(
-            id.value.toString(),
-            this._userId ? this._userId.toString() : null,
-            deviceId ? deviceId : null,
-            jobId ? jobId.toString() : null,
-            asset.albumId ? asset.albumId : null,
-            asset.id ? asset.id : null,
-            currentDate ? currentDate.toString() : null,
-            location?.Longitude ? location.Longitude.toString() : null,
-            location?.Latitude ? location.Latitude.toString() : null,
-            asset.creationTime ? asset.creationTime.toString() : null,
-          );
+          console.log('BuildUniqueId for pictureBucket returned :', uid);
+          if (uid > -1n) {
+            await statement.executeAsync<{
+              _id: string;
+              UserId: string;
+              DeviceId: string;
+              JobId: string;
+              AlbumId: string;
+              AssetId: string;
+              DateAdded?: Date;
+              Longitude?: number;
+              Latitude?: number;
+              PictureDate?: Date;
+            }>(
+              uid.toString(),
+              this._userId ? this._userId.toString() : null,
+              deviceId ? deviceId : null,
+              jobId ? jobId.toString() : null,
+              asset.albumId ? asset.albumId : null,
+              asset.id ? asset.id : null,
+              currentDate ? currentDate.toString() : null,
+              location?.Longitude ? location.Longitude.toString() : null,
+              location?.Latitude ? location.Latitude.toString() : null,
+              asset.creationTime ? asset.creationTime.toString() : null,
+            );
 
-          status = 'Success';
+            status = 'Success';
+          }
         }
       } catch (error) {
         status = 'Error';
@@ -123,7 +126,7 @@ export class PictureBucketDB {
       }
     });
 
-    return status;
+    return { status, id };
   }
 
   public async UpdateJobId(id: bigint, jobId: bigint): Promise<DBStatus> {
@@ -233,8 +236,8 @@ export class PictureBucketDB {
   }
 
   public async FetchJobAssets(
-    jobId: bigint | null,
-    assets: MediaLibrary.Asset[] | null,
+    jobId: string | undefined,
+    assets: MediaLibrary.Asset[] | undefined,
   ): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
@@ -255,7 +258,7 @@ export class PictureBucketDB {
           const result = await statement?.executeAsync<{
             AlbumId: string;
             AssetId: string;
-          }>(jobId?.toString(), deviceId);
+          }>(jobId, deviceId);
 
           if (result) {
             await result.getAllAsync().then(async (rows) => {
@@ -281,7 +284,7 @@ export class PictureBucketDB {
   }
 
   public async FetchJobPictures(
-    jobId: bigint,
+    jobId: string,
     pictures: PictureBucketData[],
   ): Promise<DBStatus> {
     if (!this._db) {
@@ -307,16 +310,16 @@ export class PictureBucketDB {
           Longitude: number;
           Latitude: number;
           PictureDate: Date;
-        }>(jobId.toString());
+        }>(jobId);
 
         if (result) {
           await result.getAllAsync().then((rows) => {
             for (const row of rows) {
               pictures.push({
-                _id: BigInt(row._id),
-                JobId: BigInt(row.JobId),
-                DeviceId: BigInt(row.DeviceId),
-                UserId: BigInt(row.userId),
+                _id: row._id,
+                JobId: row.JobId,
+                DeviceId: row.DeviceId,
+                UserId: row.userId,
                 AlbumId: row.AlbumId,
                 AssetId: row.AssetId,
                 DateAdded: row.DateAdded,

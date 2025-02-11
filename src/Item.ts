@@ -1,16 +1,18 @@
 import { SQLiteDatabase, openDatabaseAsync } from 'expo-sqlite'; // Use 'react-native-sqlite-storage' if using React Native
-import { DBStatus } from './jobtrakr';
+import { JobTrakrDB, DBStatus } from './jobtrakr';
 import { BuildUniqueId } from './dbutils';
 import { JobCategoryItemData } from './interfaces';
 
 export class ItemDB {
   private _db: SQLiteDatabase | null;
+  private _jobTrakr: JobTrakrDB | null;
   readonly _tableName = 'items';
-  private _userId: number;
+  private _userId: number | undefined;
 
-  public constructor(db: SQLiteDatabase, custId: number) {
-    this._db = db;
-    this._userId = custId;
+  public constructor(jobTrakr: JobTrakrDB) {
+    this._jobTrakr = jobTrakr;
+    this._db = this._jobTrakr.GetDb();
+    this._userId = this._jobTrakr.GetUserId();
   }
 
   // Create a table if it does not exist
@@ -28,15 +30,15 @@ export class ItemDB {
   }
 
   public async CreateItem(
-    id: { value: bigint },
     item: JobCategoryItemData,
-  ): Promise<DBStatus> {
+  ): Promise<{ status: DBStatus; id: string }> {
     if (!this._db) {
-      return 'Error';
+      return { status: 'Error', id: '0' };
     }
     console.log('Creating item:', item);
 
     let status: DBStatus = 'Error';
+    let id: string | undefined = '0';
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       console.log('preparing statement for item');
@@ -48,29 +50,31 @@ export class ItemDB {
       console.log('CreateItem statement created');
 
       try {
-        item._id = await BuildUniqueId(tx, this._userId);
+        if (this._userId) {
+          const uid = await BuildUniqueId(tx, this._userId);
 
-        id.value = item._id;
+          id = uid.toString();
 
-        console.log('BuildUniqueId for item returned :', item._id);
-        if (item._id > -1n) {
-          await statement.executeAsync<{
-            _id: string;
-            Code: string;
-            CategoryId: string;
-            ItemName: string;
-            EstPrice?: number;
-            ItemStatus: string;
-          }>(
-            item._id?.toString(),
-            item.Code,
-            item.CategoryId ? item.CategoryId.toString() : null,
-            item.ItemName,
-            item.EstPrice ? item.EstPrice.toString() : null,
-            item.ItemStatus,
-          );
+          console.log('BuildUniqueId for item returned :', uid);
+          if (uid > -1n) {
+            await statement.executeAsync<{
+              _id: string;
+              Code: string;
+              CategoryId: string;
+              ItemName: string;
+              EstPrice?: number;
+              ItemStatus: string;
+            }>(
+              uid?.toString(),
+              item.Code ? item.Code : null,
+              item.CategoryId ? item.CategoryId.toString() : null,
+              item.ItemName,
+              item.EstPrice ? item.EstPrice.toString() : null,
+              item.ItemStatus ? item.ItemStatus : 'Active',
+            );
 
-          status = 'Success';
+            status = 'Success';
+          }
         }
       } catch (error) {
         status = 'Error';
@@ -80,7 +84,7 @@ export class ItemDB {
       }
     });
 
-    return status;
+    return { status, id };
   }
 
   public async UpdateItem(item: JobCategoryItemData): Promise<DBStatus> {
@@ -115,10 +119,10 @@ export class ItemDB {
           _id: string;
         }>(
           item.CategoryId ? item.CategoryId.toString() : null,
-          item.Code,
+          item.Code ? item.Code : null,
           item.ItemName,
           item.EstPrice ? item.EstPrice.toString() : null,
-          item.ItemStatus,
+          item.ItemStatus ? item.ItemStatus : 'Active',
           item._id ? item._id.toString() : null,
         );
 
@@ -210,8 +214,8 @@ export class ItemDB {
           await result.getAllAsync().then((rows) => {
             for (const row of rows) {
               items.push({
-                _id: BigInt(row._id),
-                CategoryId: BigInt(row.CategoryId),
+                _id: row._id,
+                CategoryId: row.CategoryId,
                 Code: row.Code,
                 ItemName: row.ItemName,
                 EstPrice: row.EstPrice,

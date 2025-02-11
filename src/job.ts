@@ -1,16 +1,18 @@
 import { SQLiteDatabase, openDatabaseAsync } from 'expo-sqlite'; // Use 'react-native-sqlite-storage' if using React Native
-import { DBStatus } from './jobtrakr';
+import { DBStatus, JobTrakrDB } from './jobtrakr';
 import { BuildUniqueId } from './dbutils';
 import { JobData } from './interfaces';
 
 export class JobDB {
   private _db: SQLiteDatabase | null;
+  private _jobTrackr: JobTrakrDB | null;
   readonly _tableName = 'jobs';
-  private _userId: number;
+  private _userId: number | undefined;
 
-  public constructor(db: SQLiteDatabase, userId: number) {
-    this._db = db;
-    this._userId = userId;
+  public constructor(jobTrakr: JobTrakrDB) {
+    this._jobTrackr = jobTrakr;
+    this._db = this._jobTrackr.GetDb();
+    this._userId = this._jobTrackr.GetUserId();
   }
 
   // Create a table if it does not exist
@@ -21,7 +23,8 @@ export class JobDB {
         'Name TEXT, ' +
         'JobTypeId INTEGER, ' +
         'UserId INTEGER not null, ' +
-        'JobLocation TEXT, ' +
+        'Location TEXT, ' +
+        'OwnerName TEXT, ' +
         'StartDate Date, ' +
         'PlannedFinish Date, ' +
         'BidPrice NUMBER, ' +
@@ -36,65 +39,68 @@ export class JobDB {
   }
 
   public async CreateJob(
-    id: { value: bigint },
     job: JobData,
-  ): Promise<DBStatus> {
+  ): Promise<{ id: string; status: DBStatus }> {
     if (!this._db) {
-      return 'Error';
+      return { id: '0', status: 'Error' };
     }
     console.log('Creating job:', job);
 
     let status: DBStatus = 'Error';
+    let id: string = '0';
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       console.log('preparing job statement for user: ', this._userId);
       const statement = await tx.prepareAsync(
-        `INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, UserId, JobLocation, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, Thumbnail, JobStatus) ` +
-          ' VALUES ($_id, $Code, $Name, $JobTypeId, $UserId, $JobLocation, $StartDate, $PlannedFinish, $BidPrice, $Longitude, $Latitude, $Radius, $Thumbnail, $JobStatus)',
+        `INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, UserId, Location, OwnerName, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, Thumbnail, JobStatus) ` +
+          ' VALUES ($_id, $Code, $Name, $JobTypeId, $UserId, $Location, $OwnerName, $StartDate, $PlannedFinish, $BidPrice, $Longitude, $Latitude, $Radius, $Thumbnail, $JobStatus)',
       );
 
       console.log('CreateJob statement created');
 
       try {
-        job._id = await BuildUniqueId(tx, this._userId);
+        if (this._userId) {
+          const uid = await BuildUniqueId(tx, this._userId);
 
-        id.value = job._id;
+          console.log('BuildUniqueId returned :', job._id);
+          if (uid > -1n) {
+            id = uid.toString();
+            await statement.executeAsync<{
+              _id: string;
+              Code: string;
+              Name: string;
+              JobTypeId: string;
+              UserId: string;
+              Location: string;
+              OwnerName: string;
+              StartDate?: Date;
+              PlannedFinish?: Date;
+              BidPrice?: number;
+              Longitude?: number;
+              Latitude?: number;
+              Radius?: number;
+              Thumbnail?: string;
+              JobStatus: string;
+            }>(
+              uid.toString(),
+              job.Code ? job.Code : null,
+              job.Name,
+              job.JobTypeId ? job.JobTypeId.toString() : null,
+              this._userId ? this._userId.toString() : null,
+              job.Location ? job.Location : null,
+              job.OwnerName ? job.OwnerName : null,
+              job.StartDate ? job.StartDate.toString() : null,
+              job.PlannedFinish ? job.PlannedFinish.toString() : null,
+              job.BidPrice ? job.BidPrice.toString() : null,
+              job.Longitude ? job.Longitude.toString() : null,
+              job.Latitude ? job.Latitude.toString() : null,
+              job.Radius ? job.Radius.toString() : null,
+              job.Thumbnail ? job.Thumbnail.toString() : null,
+              job.JobStatus ? job.JobStatus : 'Active',
+            );
 
-        console.log('BuildUniqueId returned :', job._id);
-        if (job._id > -1n) {
-          await statement.executeAsync<{
-            _id: string;
-            Code: string;
-            Name: string;
-            JobTypeId: string;
-            UserId: string;
-            JobLocation: string;
-            StartDate?: Date;
-            PlannedFinish?: Date;
-            BidPrice?: number;
-            Longitude?: number;
-            Latitude?: number;
-            Radius?: number;
-            Thumbnail?: string;
-            JobStatus: string;
-          }>(
-            job._id?.toString(),
-            job.Code,
-            job.Name,
-            job.JobTypeId ? job.JobTypeId.toString() : null,
-            this._userId ? this._userId.toString() : null,
-            job.JobLocation,
-            job.StartDate ? job.StartDate.toString() : null,
-            job.PlannedFinish ? job.PlannedFinish.toString() : null,
-            job.BidPrice ? job.BidPrice.toString() : null,
-            job.Longitude ? job.Longitude.toString() : null,
-            job.Latitude ? job.Latitude.toString() : null,
-            job.Radius ? job.Radius.toString() : null,
-            job.Thumbnail ? job.Thumbnail.toString() : null,
-            job.JobStatus,
-          );
-
-          status = 'Success';
+            status = 'Success';
+          }
         }
       } catch (error) {
         status = 'Error';
@@ -104,7 +110,7 @@ export class JobDB {
       }
     });
 
-    return status;
+    return { status, id };
   }
 
   public async UpdateJob(job: JobData): Promise<DBStatus> {
@@ -119,7 +125,7 @@ export class JobDB {
       console.log('Inside withExclusiveTransactionAsync for job:', job._id);
       const statement = await tx.prepareAsync(
         `update ${this._tableName} set ` +
-          ' code = $Code, name = $Name, JobTypeId = $JobTypeId, UserId = $UserId, JobLocation = $JobLocation, ' +
+          ' code = $Code, name = $Name, JobTypeId = $JobTypeId, UserId = $UserId, Location = $Location, OwnerName = $OwnerName,' +
           ' StartDate = $StartDate, PlannedFinish = $PlannedFinish, BidPrice = $BidPrice, JobStatus = $JobStatus, ' +
           ' Longitude = $Longitude, Latitude = $Latitude, Radius = $Radius' +
           ' where _id = $_id',
@@ -134,6 +140,7 @@ export class JobDB {
           JobTypeId: string;
           UserId: string;
           JobLocation: string;
+          OwnerName: string;
           StartDate?: Date;
           PlannedFinish?: Date;
           BidPrice?: number;
@@ -143,15 +150,16 @@ export class JobDB {
           Radius?: number;
           _id: string;
         }>(
-          job.Code,
+          job.Code ? job.Code : null,
           job.Name,
           job.JobTypeId ? job.JobTypeId.toString() : null,
           this._userId ? this._userId.toString() : null,
-          job.JobLocation,
+          job.Location ? job.Location : null,
+          job.OwnerName ? job.OwnerName : null,
           job.StartDate ? job.StartDate.toString() : null,
           job.PlannedFinish ? job.PlannedFinish.toString() : null,
           job.BidPrice ? job.BidPrice.toString() : null,
-          job.JobStatus,
+          job.JobStatus ? job.JobStatus : 'Active',
           job.Longitude ? job.Longitude.toString() : null,
           job.Latitude ? job.Latitude.toString() : null,
           job.Radius ? job.Radius.toString() : null,
@@ -181,7 +189,7 @@ export class JobDB {
     long: number,
     lat: number,
     radius: number,
-    id: bigint,
+    id: string,
   ): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
@@ -210,7 +218,7 @@ export class JobDB {
           long ? long.toString() : null,
           lat ? lat.toString() : null,
           radius ? radius.toString() : null,
-          id ? id.toString() : null,
+          id ? id : null,
         );
 
         if (result.changes > 0) {
@@ -238,7 +246,7 @@ export class JobDB {
 
   public async UpdateThumbnail(
     thumbnailInBase64: string | undefined,
-    id: bigint,
+    id: string,
   ): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
@@ -258,10 +266,7 @@ export class JobDB {
         let result = await statement.executeAsync<{
           Thumbnail?: string;
           _id: string;
-        }>(
-          thumbnailInBase64 ? thumbnailInBase64 : null,
-          id ? id.toString() : null,
-        );
+        }>(thumbnailInBase64 ? thumbnailInBase64 : null, id ? id : null);
 
         if (result.changes > 0) {
           console.log(
@@ -286,7 +291,7 @@ export class JobDB {
     return status;
   }
 
-  public async DeleteJob(id: bigint): Promise<DBStatus> {
+  public async DeleteJob(id: string): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
     }
@@ -326,7 +331,7 @@ export class JobDB {
     return status;
   }
 
-  public async FetchThumbnail(id: number): Promise<string | undefined> {
+  public async FetchThumbnail(id: string): Promise<string | undefined> {
     if (!this._db) {
       return undefined;
     }
@@ -359,8 +364,85 @@ export class JobDB {
     return thumbnail;
   }
 
+  public async FetchJobById(
+    id: string,
+  ): Promise<{ job: JobData; status: DBStatus }> {
+    let jobData: JobData = {
+      Name: '',
+    };
+
+    if (!this._db) {
+      return { job: jobData, status: 'Error' };
+    }
+
+    if (!this._userId) {
+      return { job: jobData, status: 'Error' };
+    }
+
+    let status: DBStatus = 'Error';
+
+    await this._db.withExclusiveTransactionAsync(async (tx) => {
+      const statement = await this._db?.prepareAsync(
+        `select _id, code, name, JobTypeId, UserId, Location, OwnerName, StartDate, PlannedFinish, BidPrice, Longitude, ` +
+          ` Latitude, Radius, Thumbnail, JobStatus from ${this._tableName} where _id = $_id`,
+      );
+
+      try {
+        if (this._userId) {
+          const result = await statement?.executeAsync<{
+            _id: string;
+            Code: string;
+            Name: string;
+            JobTypeId: string;
+            UserId: number;
+            Location: string;
+            OwnerName: string;
+            StartDate?: Date;
+            PlannedFinish?: Date;
+            BidPrice?: number;
+            Longitude?: number;
+            Latitude?: number;
+            Radius?: number;
+            Thumbnail?: string | undefined;
+            JobStatus: string;
+          }>(this._userId.toString());
+
+          if (result) {
+            await result.getFirstAsync().then((row) => {
+              (jobData._id = row?._id.toString()),
+                (jobData.Code = row?.Code),
+                (jobData.Name = row?.Name ? row?.Name : ''),
+                (jobData.JobTypeId = row?.JobTypeId),
+                (jobData.Location = row?.Location),
+                (jobData.StartDate = row?.StartDate),
+                (jobData.PlannedFinish = row?.PlannedFinish),
+                (jobData.BidPrice = row?.BidPrice),
+                (jobData.Longitude = row?.Longitude),
+                (jobData.Latitude = row?.Latitude),
+                (jobData.Radius = row?.Radius),
+                (jobData.Thumbnail = row?.Thumbnail),
+                (jobData.JobStatus = row?.JobStatus);
+            });
+          }
+          status = 'Success';
+        }
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+        status = 'Error';
+      } finally {
+        statement?.finalizeAsync();
+      }
+    });
+
+    return { job: jobData, status };
+  }
+
   public async FetchAllJobs(): Promise<{ jobs: JobData[]; status: DBStatus }> {
     if (!this._db) {
+      return { jobs: [], status: 'Error' };
+    }
+
+    if (!this._userId) {
       return { jobs: [], status: 'Error' };
     }
 
@@ -370,51 +452,53 @@ export class JobDB {
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
-        `select _id, code, name, JobTypeId, UserId, JobLocation, StartDate, PlannedFinish, BidPrice, Longitude, ` +
+        `select _id, code, name, JobTypeId, UserId, Location, OwnerName, StartDate, PlannedFinish, BidPrice, Longitude, ` +
           ` Latitude, Radius, Thumbnail, JobStatus from ${this._tableName} where UserId = $UserId`,
       );
 
       try {
-        const result = await statement?.executeAsync<{
-          _id: string;
-          Code: string;
-          Name: string;
-          JobTypeId: string;
-          UserId: number;
-          JobLocation: string;
-          StartDate?: Date;
-          PlannedFinish?: Date;
-          BidPrice?: number;
-          Longitude?: number;
-          Latitude?: number;
-          Radius?: number;
-          Thumbnail?: string | undefined;
-          JobStatus: string;
-        }>(this._userId.toString());
+        if (this._userId) {
+          const result = await statement?.executeAsync<{
+            _id: string;
+            Code: string;
+            Name: string;
+            JobTypeId: string;
+            UserId: number;
+            Location: string;
+            OwnerName: string;
+            StartDate?: Date;
+            PlannedFinish?: Date;
+            BidPrice?: number;
+            Longitude?: number;
+            Latitude?: number;
+            Radius?: number;
+            Thumbnail?: string | undefined;
+            JobStatus: string;
+          }>(this._userId.toString());
 
-        if (result) {
-          await result.getAllAsync().then((rows) => {
-            for (const row of rows) {
-              jobs.push({
-                _id: BigInt(row._id),
-                Code: row.Code,
-                Name: row.Name,
-                JobTypeId: BigInt(row.JobTypeId),
-                UserId: row.UserId,
-                JobLocation: row.JobLocation,
-                StartDate: row.StartDate,
-                PlannedFinish: row.PlannedFinish,
-                BidPrice: row.BidPrice,
-                Longitude: row.Longitude,
-                Latitude: row.Latitude,
-                Radius: row.Radius,
-                Thumbnail: row.Thumbnail,
-                JobStatus: row.JobStatus,
-              });
-            }
-          });
+          if (result) {
+            await result.getAllAsync().then((rows) => {
+              for (const row of rows) {
+                jobs.push({
+                  _id: row._id.toString(),
+                  Code: row.Code,
+                  Name: row.Name,
+                  JobTypeId: row.JobTypeId,
+                  Location: row.Location,
+                  StartDate: row.StartDate,
+                  PlannedFinish: row.PlannedFinish,
+                  BidPrice: row.BidPrice,
+                  Longitude: row.Longitude,
+                  Latitude: row.Latitude,
+                  Radius: row.Radius,
+                  Thumbnail: row.Thumbnail,
+                  JobStatus: row.JobStatus,
+                });
+              }
+            });
+          }
+          status = 'Success';
         }
-        status = 'Success';
       } catch (error) {
         console.error('Error fetching jobs:', error);
         status = 'Error';

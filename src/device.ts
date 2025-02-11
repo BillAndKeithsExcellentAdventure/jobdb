@@ -1,5 +1,5 @@
 import { SQLiteDatabase, openDatabaseAsync } from 'expo-sqlite'; // Use 'react-native-sqlite-storage' if using React Native
-import { DBStatus } from './jobtrakr';
+import { JobTrakrDB, DBStatus } from './jobtrakr';
 import { BuildUniqueId } from './dbutils';
 import * as Application from 'expo-application';
 import * as Device from 'expo-device';
@@ -7,12 +7,14 @@ import { Platform } from 'react-native';
 
 export class DeviceDB {
   private _db: SQLiteDatabase | null;
+  private _jobTrakr: JobTrakrDB | null;
   readonly _tableName = 'devices';
-  private _userId: number;
+  private _userId: number | undefined;
 
-  public constructor(db: SQLiteDatabase, userId: number) {
-    this._db = db;
-    this._userId = userId;
+  public constructor(jobTrakr: JobTrakrDB) {
+    this._jobTrakr = jobTrakr;
+    this._db = this._jobTrakr.GetDb();
+    this._userId = this._jobTrakr.GetUserId();
   }
 
   // Create a table if it does not exist
@@ -59,25 +61,27 @@ export class DeviceDB {
       console.log('CreateDevice statement created');
 
       try {
-        id.value = await BuildUniqueId(tx, this._userId);
+        if (this._userId) {
+          id.value = await BuildUniqueId(tx, this._userId);
 
-        console.log('BuildUniqueId returned :', id.value);
-        if (id.value > -1n) {
-          await statement.executeAsync<{
-            _id: string;
-            UserId: string;
-            Name: string;
-            DeviceId: string;
-            DeviceType: string;
-          }>(
-            id.value?.toString(),
-            this._userId.toString(),
-            Device.deviceName,
-            deviceId,
-            Platform.OS,
-          );
+          console.log('BuildUniqueId returned :', id.value);
+          if (id.value > -1n) {
+            await statement.executeAsync<{
+              _id: string;
+              UserId: string;
+              Name: string;
+              DeviceId: string;
+              DeviceType: string;
+            }>(
+              id.value?.toString(),
+              this._userId.toString(),
+              Device.deviceName,
+              deviceId,
+              Platform.OS,
+            );
 
-          status = 'Success';
+            status = 'Success';
+          }
         }
       } catch (error) {
         status = 'Error';

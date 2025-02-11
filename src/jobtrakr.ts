@@ -77,8 +77,22 @@ export class JobTrakrDB {
     }
   };
 
-  public async OpenDatabase(createSample: boolean = false): Promise<DBStatus> {
+  public async OpenDatabase(
+    createSample: boolean = false,
+    replaceExisting: boolean = false,
+  ): Promise<DBStatus> {
     try {
+      if (replaceExisting) {
+        const filename =
+          FileSystem.documentDirectory + `SQLite/${this._dbName}`;
+        const fileInfo = await FileSystem.getInfoAsync(filename);
+        if (fileInfo.exists) {
+          // If the file exists, delete it
+          await FileSystem.deleteAsync(filename);
+          console.log('Existing SQLite File deleted successfully');
+        }
+      }
+
       console.log(`Opening database ${this._dbName}`);
       this._db = await openDatabaseAsync(this._dbName);
       if (this._db) {
@@ -126,7 +140,7 @@ export class JobTrakrDB {
 
   public GetJobDB(): JobDB {
     if (this._db && !this._jobDB) {
-      this._jobDB = new JobDB(this._db, this._userId);
+      this._jobDB = new JobDB(this);
       this._jobDB.CreateJobTable(); // Ensure the Jobs table exists. It will do a "Create if not exists" operation.
     }
 
@@ -139,7 +153,7 @@ export class JobTrakrDB {
 
   public GetCategoryDB(): CategoryDB {
     if (this._db && !this._categoryDB) {
-      this._categoryDB = new CategoryDB(this._db, this._userId);
+      this._categoryDB = new CategoryDB(this);
       this._categoryDB.CreateCategoryTable(); // Ensure the Category table exists. It will do a "Create if not exists" operation.
     }
 
@@ -152,7 +166,7 @@ export class JobTrakrDB {
 
   public GetItemDB(): ItemDB {
     if (this._db && !this._itemDB) {
-      this._itemDB = new ItemDB(this._db, this._userId);
+      this._itemDB = new ItemDB(this);
       this._itemDB.CreateItemTable(); // Ensure the Item table exists. It will do a "Create if not exists" operation.
     }
 
@@ -165,7 +179,7 @@ export class JobTrakrDB {
 
   public GetPictureBucketDB(): PictureBucketDB {
     if (this._db && !this._pictureBucketDB) {
-      this._pictureBucketDB = new PictureBucketDB(this, this._userId);
+      this._pictureBucketDB = new PictureBucketDB(this);
       this._pictureBucketDB?.CreatePictureBucketTable(); // Ensure the PictureBucket table exists. It will do a "Create if not exists" operation.
     }
 
@@ -178,7 +192,7 @@ export class JobTrakrDB {
 
   public GetDeviceDB(): DeviceDB {
     if (this._db && !this._deviceDB) {
-      this._deviceDB = new DeviceDB(this._db, this._userId);
+      this._deviceDB = new DeviceDB(this);
       this._deviceDB?.CreateDeviceTable(); // Ensure the PictureBucket table exists. It will do a "Create if not exists" operation.
     }
 
@@ -191,7 +205,7 @@ export class JobTrakrDB {
 
   public CreateSampleData = async () => {
     if (this._db) {
-      const sampleData = new JobTrakrSampleData(this, this._userId);
+      const sampleData = new JobTrakrSampleData(this);
       sampleData.CreateSampleData();
     }
   };

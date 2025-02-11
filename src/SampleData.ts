@@ -1,23 +1,22 @@
+import { SQLiteDatabase } from 'expo-sqlite';
 import { DBStatus, JobTrakrDB } from './jobtrakr';
 
 export class JobTrakrSampleData {
-  private _db: JobTrakrDB;
-  private _userId: number;
+  private _jobTrakr: JobTrakrDB | null;
+  private _userId: number | undefined;
 
-  public constructor(db: JobTrakrDB, userId: number) {
-    this._db = db;
-    this._userId = userId;
+  public constructor(jobTrakr: JobTrakrDB) {
+    this._jobTrakr = jobTrakr;
+    this._userId = jobTrakr.GetUserId();
   }
 
   private CreateSampleItems = async (data: {
-    CatId: bigint;
+    CatId: string;
     Code: string;
     Name: string;
     EstPrice: number;
-  }): Promise<DBStatus> => {
-    let newId = { value: 0n };
-    const createStatus = await this._db?.GetItemDB().CreateItem(newId, {
-      _id: 0n,
+  }): Promise<{ id: string; status: DBStatus } | undefined> => {
+    const createStatus = await this._jobTrakr?.GetItemDB().CreateItem({
       Code: data.Code,
       CategoryId: data.CatId,
       ItemName: data.Name,
@@ -28,123 +27,123 @@ export class JobTrakrSampleData {
     return createStatus;
   };
 
-  private CreateSampleCategory = async (
-    id: { value: bigint },
-    data: { JobId: bigint; Code: string; Name: string; EstPrice: number },
-  ): Promise<DBStatus> => {
-    let newId = { value: 0n };
-    const createStatus = await this._db?.GetCategoryDB().CreateCategory(newId, {
-      _id: 0n,
+  private CreateSampleCategory = async (data: {
+    JobId: bigint;
+    Code: string;
+    Name: string;
+    EstPrice: number;
+  }): Promise<{ status: DBStatus; id: string } | undefined> => {
+    const createStatus = await this._jobTrakr?.GetCategoryDB().CreateCategory({
       Code: data.Code,
-      JobId: data.JobId,
+      JobId: data.JobId.toString(),
       CategoryName: data.Name,
       EstPrice: data.EstPrice,
       CategoryStatus: 'Active',
     });
 
-    if (createStatus === 'Success') {
-      id.value = newId.value;
-    }
-
     return createStatus;
   };
 
   private CreateSampleCategories = async (jobId: bigint): Promise<DBStatus> => {
-    let newId = { value: 0n };
-    let status = await this.CreateSampleCategory(newId, {
+    let status = await this.CreateSampleCategory({
       JobId: jobId,
       Code: '100',
       Name: 'Pre-Construction',
       EstPrice: 1000.0,
     });
-    if (status === 'Success') {
-      await this.CreateSampleItems({
-        CatId: newId.value,
-        Code: '100.1',
-        Name: 'Permit',
-        EstPrice: 100.0,
-      });
-      await this.CreateSampleItems({
-        CatId: newId.value,
-        Code: '100.2',
-        Name: 'Site Plan',
-        EstPrice: 200.0,
-      });
-      await this.CreateSampleItems({
-        CatId: newId.value,
-        Code: '100.3',
-        Name: 'Survey',
-        EstPrice: 600.0,
-      });
+    if (status) {
+      if (status.status === 'Success') {
+        await this.CreateSampleItems({
+          CatId: status.id,
+          Code: '100.1',
+          Name: 'Permit',
+          EstPrice: 100.0,
+        });
+        await this.CreateSampleItems({
+          CatId: status.id,
+          Code: '100.2',
+          Name: 'Site Plan',
+          EstPrice: 200.0,
+        });
+        await this.CreateSampleItems({
+          CatId: status.id,
+          Code: '100.3',
+          Name: 'Survey',
+          EstPrice: 600.0,
+        });
+      }
     }
 
-    status = await this.CreateSampleCategory(newId, {
+    status = await this.CreateSampleCategory({
       JobId: jobId,
       Code: '200',
       Name: 'SiteWork',
       EstPrice: 2000.0,
     });
-    if (status === 'Success') {
-      await this.CreateSampleItems({
-        CatId: newId.value,
-        Code: '200.1',
-        Name: 'Clear Trees and Brush',
-        EstPrice: 9000.0,
-      });
-      await this.CreateSampleItems({
-        CatId: newId.value,
-        Code: '200.2',
-        Name: 'Add silt socks',
-        EstPrice: 1500.0,
-      });
-      await this.CreateSampleItems({
-        CatId: newId.value,
-        Code: '200.3',
-        Name: 'Level lot',
-        EstPrice: 1300.0,
-      });
+    if (status) {
+      if (status.status === 'Success') {
+        await this.CreateSampleItems({
+          CatId: status.id,
+          Code: '200.1',
+          Name: 'Clear Trees and Brush',
+          EstPrice: 9000.0,
+        });
+        await this.CreateSampleItems({
+          CatId: status.id,
+          Code: '200.2',
+          Name: 'Add silt socks',
+          EstPrice: 1500.0,
+        });
+        await this.CreateSampleItems({
+          CatId: status.id,
+          Code: '200.3',
+          Name: 'Level lot',
+          EstPrice: 1300.0,
+        });
+      }
     }
 
-    status = await this.CreateSampleCategory(newId, {
+    status = await this.CreateSampleCategory({
       JobId: jobId,
       Code: '300',
       Name: 'Concrete',
       EstPrice: 8000.0,
     });
-    if (status === 'Success') {
-      await this.CreateSampleItems({
-        CatId: newId.value,
-        Code: '300.1',
-        Name: 'Footer',
-        EstPrice: 12000.0,
-      });
-      await this.CreateSampleItems({
-        CatId: newId.value,
-        Code: '300.2',
-        Name: 'Basement Walls',
-        EstPrice: 25000.0,
-      });
-      await this.CreateSampleItems({
-        CatId: newId.value,
-        Code: '300.3',
-        Name: 'Basement Floor',
-        EstPrice: 1800.0,
-      });
+
+    if (status) {
+      if (status.status === 'Success') {
+        await this.CreateSampleItems({
+          CatId: status.id,
+          Code: '300.1',
+          Name: 'Footer',
+          EstPrice: 12000.0,
+        });
+        await this.CreateSampleItems({
+          CatId: status.id,
+          Code: '300.2',
+          Name: 'Basement Walls',
+          EstPrice: 25000.0,
+        });
+        await this.CreateSampleItems({
+          CatId: status.id,
+          Code: '300.3',
+          Name: 'Basement Floor',
+          EstPrice: 1800.0,
+        });
+      }
     }
 
     return 'Success';
   };
 
   public CreateSampleData = async () => {
-    if (this._db) {
+    if (this._jobTrakr) {
       let newId = { value: 0n };
-      let createStatus = await this._db?.GetJobDB().CreateJob(newId, {
-        _id: 0n,
+      let createStatus = await this._jobTrakr?.GetJobDB().CreateJob({
         Code: '100',
         Name: 'Keith Bertram',
-        JobTypeId: 1n,
-        UserId: this._userId,
-        JobLocation: '9940 Blacksmith Way',
+        JobTypeId: '1',
+        Location: '9940 Blacksmith Way',
         StartDate: new Date(),
         PlannedFinish: new Date(),
         BidPrice: 1000.0,
@@ -155,17 +154,15 @@ export class JobTrakrSampleData {
         JobStatus: 'Active',
       });
       console.log('Create Job Status: ', createStatus);
-      if (createStatus === 'Success') {
+      if (createStatus.status === 'Success') {
         await this.CreateSampleCategories(newId.value);
       }
 
-      createStatus = await this._db?.GetJobDB().CreateJob(newId, {
-        _id: 0n,
+      createStatus = await this._jobTrakr?.GetJobDB().CreateJob({
         Code: '200',
         Name: 'Bill Steinbock',
-        JobTypeId: 1n,
-        UserId: this._userId,
-        JobLocation: 'Louisville, KY',
+        JobTypeId: '1',
+        Location: 'Louisville, KY',
         StartDate: new Date(),
         PlannedFinish: new Date(),
         BidPrice: 2000.0,
@@ -176,17 +173,15 @@ export class JobTrakrSampleData {
         JobStatus: 'Active',
       });
       console.log('Create Job Status: ', createStatus);
-      if (createStatus === 'Success') {
+      if (createStatus.status === 'Success') {
         await this.CreateSampleCategories(newId.value);
       }
 
-      createStatus = await this._db?.GetJobDB().CreateJob(newId, {
-        _id: 0n,
+      createStatus = await this._jobTrakr?.GetJobDB().CreateJob({
         Code: '100',
         Name: 'Clint Eastwood',
-        JobTypeId: 1n,
-        UserId: this._userId,
-        JobLocation: 'California',
+        JobTypeId: '1',
+        Location: 'California',
         StartDate: new Date(),
         PlannedFinish: new Date(),
         BidPrice: 1000.0,
@@ -197,7 +192,7 @@ export class JobTrakrSampleData {
         JobStatus: 'Active',
       });
       console.log('Create Job Status: ', createStatus);
-      if (createStatus === 'Success') {
+      if (createStatus.status === 'Success') {
         await this.CreateSampleCategories(newId.value);
       }
     }
