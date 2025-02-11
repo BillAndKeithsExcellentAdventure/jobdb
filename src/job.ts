@@ -132,22 +132,7 @@ export class JobDB {
       console.log('Updating job statement created for:', job._id);
 
       try {
-        let result = await statement.executeAsync<{
-          Code: string;
-          Name: string;
-          JobTypeId: string;
-          UserId: string;
-          JobLocation: string;
-          OwnerName: string;
-          StartDate?: Date;
-          PlannedFinish?: Date;
-          BidPrice?: number;
-          JobStatus: string;
-          Longitude?: number;
-          Latitude?: number;
-          Radius?: number;
-          _id: string;
-        }>(
+        let result = await statement.executeAsync<JobData>(
           job.Code ? job.Code : null,
           job.Name,
           job.JobTypeId ? job.JobTypeId.toString() : null,
