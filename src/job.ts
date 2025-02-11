@@ -356,31 +356,16 @@ export class JobDB {
 
       try {
         if (this._userId) {
-          const result = await statement?.executeAsync<{
-            _id: string;
-            Code: string;
-            Name: string;
-            JobTypeId: string;
-            UserId: number;
-            Location: string;
-            OwnerName: string;
-            StartDate?: Date;
-            PlannedFinish?: Date;
-            BidPrice?: number;
-            Longitude?: number;
-            Latitude?: number;
-            Radius?: number;
-            Thumbnail?: string | undefined;
-            JobStatus: string;
-          }>(id);
+          const result = await statement?.executeAsync<JobData>(id);
 
           if (result) {
             await result.getFirstAsync().then((row) => {
-              (jobData._id = row?._id.toString()),
+              (jobData._id = row?._id),
                 (jobData.Code = row?.Code),
                 (jobData.Name = row?.Name ? row?.Name : ''),
                 (jobData.JobTypeId = row?.JobTypeId),
                 (jobData.Location = row?.Location),
+                (jobData.OwnerName = row?.OwnerName),
                 (jobData.StartDate = row?.StartDate),
                 (jobData.PlannedFinish = row?.PlannedFinish),
                 (jobData.BidPrice = row?.BidPrice),
