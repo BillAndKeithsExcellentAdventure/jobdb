@@ -38,9 +38,7 @@ export class JobDB {
     return 'Success';
   }
 
-  public async CreateJob(
-    job: JobData,
-  ): Promise<{ id: string; status: DBStatus }> {
+  public async CreateJob(job: JobData): Promise<{ id: string; status: DBStatus }> {
     if (!this._db) {
       return { id: '0', status: 'Error' };
     }
@@ -222,14 +220,10 @@ export class JobDB {
         );
 
         if (result.changes > 0) {
-          console.log(
-            `Job long/lat/radius updated: ${id}. Changes = ${result.changes}`,
-          );
+          console.log(`Job long/lat/radius updated: ${id}. Changes = ${result.changes}`);
           status = 'Success';
         } else {
-          console.log(
-            `Job long/lat/radius updated: ${id}. Changes = ${result.changes}`,
-          );
+          console.log(`Job long/lat/radius updated: ${id}. Changes = ${result.changes}`);
           status = 'NoChanges';
         }
       } catch (error) {
@@ -257,9 +251,7 @@ export class JobDB {
     console.log('Updating thumbnail for job:', id);
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await tx.prepareAsync(
-        `update ${this._tableName} set ` +
-          ' Thumbnail = $Thumbnail' +
-          ' where _id = $_id',
+        `update ${this._tableName} set ` + ' Thumbnail = $Thumbnail' + ' where _id = $_id',
       );
 
       try {
@@ -269,14 +261,10 @@ export class JobDB {
         }>(thumbnailInBase64 ? thumbnailInBase64 : null, id ? id : null);
 
         if (result.changes > 0) {
-          console.log(
-            `Job thumbnail updated: ${id}. Changes = ${result.changes}`,
-          );
+          console.log(`Job thumbnail updated: ${id}. Changes = ${result.changes}`);
           status = 'Success';
         } else {
-          console.log(
-            `Job thumbnail updated: ${id}. Changes = ${result.changes}`,
-          );
+          console.log(`Job thumbnail updated: ${id}. Changes = ${result.changes}`);
           status = 'NoChanges';
         }
       } catch (error) {
@@ -301,9 +289,7 @@ export class JobDB {
     console.log('Deleting job:', id);
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       console.log('Inside withExclusiveTransactionAsync for job:', id);
-      const statement = await tx.prepareAsync(
-        `delete from ${this._tableName} where _id = $id`,
-      );
+      const statement = await tx.prepareAsync(`delete from ${this._tableName} where _id = $id`);
 
       console.log('Delete job statement created for:', id);
 
@@ -350,9 +336,7 @@ export class JobDB {
         }>(id.toString());
 
         if (result) {
-          await result
-            .getFirstAsync()
-            .then((row) => (thumbnail = row?.thumbnail));
+          await result.getFirstAsync().then((row) => (thumbnail = row?.thumbnail));
         }
       } catch (error) {
         console.error('Error fetching thumbnail:', error);
@@ -364,9 +348,7 @@ export class JobDB {
     return thumbnail;
   }
 
-  public async FetchJobById(
-    id: string,
-  ): Promise<{ job: JobData; status: DBStatus }> {
+  public async FetchJobById(id: string): Promise<{ job: JobData; status: DBStatus }> {
     let jobData: JobData = {
       Name: '',
     };
@@ -384,7 +366,7 @@ export class JobDB {
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
         `select _id, code, name, JobTypeId, UserId, Location, OwnerName, StartDate, PlannedFinish, BidPrice, Longitude, ` +
-          ` Latitude, Radius, Thumbnail, JobStatus from ${this._tableName} where _id = $_id`,
+          ` Latitude, Radius, Thumbnail, JobStatus from ${this._tableName} where _id = $id`,
       );
 
       try {
@@ -405,7 +387,7 @@ export class JobDB {
             Radius?: number;
             Thumbnail?: string | undefined;
             JobStatus: string;
-          }>(this._userId.toString());
+          }>(id);
 
           if (result) {
             await result.getFirstAsync().then((row) => {
@@ -423,8 +405,9 @@ export class JobDB {
                 (jobData.Thumbnail = row?.Thumbnail),
                 (jobData.JobStatus = row?.JobStatus);
             });
+
+            status = 'Success';
           }
-          status = 'Success';
         }
       } catch (error) {
         console.error('Error fetching jobs:', error);
