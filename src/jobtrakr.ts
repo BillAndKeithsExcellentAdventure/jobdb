@@ -209,7 +209,7 @@ export class JobTrakrDB {
     }
 
     if (!this._todoDB) {
-      throw new Error('JobDB is not initialized');
+      throw new Error('TodoDB is not initialized');
     }
 
     return this._todoDB;
