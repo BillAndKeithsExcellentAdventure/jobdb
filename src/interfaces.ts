@@ -11,6 +11,7 @@ export interface JobData {
   Longitude?: number;
   Latitude?: number;
   Radius?: number;
+  Favorite?: number;
   Thumbnail?: string;
   JobStatus?: string;
 }

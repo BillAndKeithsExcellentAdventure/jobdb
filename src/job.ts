@@ -31,6 +31,7 @@ export class JobDB {
         'Longitude NUMBER, ' +
         'Latitude NUMBER, ' +
         'Radius NUMBER, ' +
+        'Favorite NUMBER, ' +
         'Thumbnail TEXT, ' +
         'JobStatus TEXT)',
     );
@@ -50,8 +51,8 @@ export class JobDB {
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       console.log('preparing job statement for user: ', this._userId);
       const statement = await tx.prepareAsync(
-        `INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, UserId, Location, OwnerName, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, Thumbnail, JobStatus) ` +
-          ' VALUES ($_id, $Code, $Name, $JobTypeId, $UserId, $Location, $OwnerName, $StartDate, $PlannedFinish, $BidPrice, $Longitude, $Latitude, $Radius, $Thumbnail, $JobStatus)',
+        `INSERT INTO ${this._tableName} (_id, code, name, JobTypeId, UserId, Location, OwnerName, StartDate, PlannedFinish, BidPrice, Longitude, Latitude, Radius, Favorite, Thumbnail, JobStatus) ` +
+          ' VALUES ($_id, $Code, $Name, $JobTypeId, $UserId, $Location, $OwnerName, $StartDate, $PlannedFinish, $BidPrice, $Longitude, $Latitude, $Radius, $Favorite, $Thumbnail, $JobStatus)',
       );
 
       console.log('CreateJob statement created');
@@ -77,6 +78,7 @@ export class JobDB {
               Longitude?: number;
               Latitude?: number;
               Radius?: number;
+              Favorite?: number;
               Thumbnail?: string;
               JobStatus: string;
             }>(
@@ -93,6 +95,7 @@ export class JobDB {
               job.Longitude ? job.Longitude.toString() : null,
               job.Latitude ? job.Latitude.toString() : null,
               job.Radius ? job.Radius.toString() : null,
+              job.Favorite ? job.Favorite : 0,
               job.Thumbnail ? job.Thumbnail.toString() : null,
               job.JobStatus ? job.JobStatus : 'Active',
             );
@@ -125,7 +128,7 @@ export class JobDB {
         `update ${this._tableName} set ` +
           ' code = $Code, name = $Name, JobTypeId = $JobTypeId, UserId = $UserId, Location = $Location, OwnerName = $OwnerName,' +
           ' StartDate = $StartDate, PlannedFinish = $PlannedFinish, BidPrice = $BidPrice, JobStatus = $JobStatus, ' +
-          ' Longitude = $Longitude, Latitude = $Latitude, Radius = $Radius' +
+          ' Longitude = $Longitude, Latitude = $Latitude, Radius = $Radius, Favorite = $Favorite' +
           ' where _id = $_id',
       );
 
@@ -146,6 +149,7 @@ export class JobDB {
           job.Longitude ? job.Longitude.toString() : null,
           job.Latitude ? job.Latitude.toString() : null,
           job.Radius ? job.Radius.toString() : null,
+          job.Favorite ? job.Favorite : 0,
           job._id ? job._id.toString() : null,
         );
 
@@ -220,6 +224,46 @@ export class JobDB {
     });
 
     console.log('Returning from long/lat/radius update statement:', id);
+    return status;
+  }
+
+  public async SetFavorite(favorite: number, id: string): Promise<DBStatus> {
+    if (!this._db) {
+      return 'Error';
+    }
+
+    let status: DBStatus = 'Error';
+
+    console.log('Updating jobs favorite:', id);
+    await this._db.withExclusiveTransactionAsync(async (tx) => {
+      const statement = await tx.prepareAsync(
+        `update ${this._tableName} set ` + ' Favorite = $Favorite ' + ' where _id = $_id',
+      );
+
+      console.log('Updating job favorite statement created for:', id);
+
+      try {
+        let result = await statement.executeAsync<{
+          Favorite?: number;
+          _id: string;
+        }>(favorite ? favorite : 0, id ? id : null);
+
+        if (result.changes > 0) {
+          console.log(`Job favorite updated: ${id}. Changes = ${result.changes}`);
+          status = 'Success';
+        } else {
+          console.log(`Job favorite updated: ${id}. Changes = ${result.changes}`);
+          status = 'NoChanges';
+        }
+      } catch (error) {
+        console.error('Error updating job favorite:', error);
+        status = 'Error';
+      } finally {
+        statement.finalizeAsync();
+      }
+    });
+
+    console.log('Returning from updating favorite update statement:', id);
     return status;
   }
 
@@ -351,7 +395,7 @@ export class JobDB {
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
         `select _id, code, name, JobTypeId, UserId, Location, OwnerName, StartDate, PlannedFinish, BidPrice, Longitude, ` +
-          ` Latitude, Radius, Thumbnail, JobStatus from ${this._tableName} where _id = $id`,
+          ` Latitude, Radius, Favorite, Thumbnail, JobStatus from ${this._tableName} where _id = $id`,
       );
 
       try {
@@ -372,6 +416,7 @@ export class JobDB {
                 (jobData.Longitude = row?.Longitude),
                 (jobData.Latitude = row?.Latitude),
                 (jobData.Radius = row?.Radius),
+                (jobData.Favorite = row?.Favorite),
                 (jobData.Thumbnail = row?.Thumbnail),
                 (jobData.JobStatus = row?.JobStatus);
             });
@@ -406,44 +451,30 @@ export class JobDB {
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
         `select _id, code, name, JobTypeId, UserId, Location, OwnerName, StartDate, PlannedFinish, BidPrice, Longitude, ` +
-          ` Latitude, Radius, Thumbnail, JobStatus from ${this._tableName} where UserId = $UserId`,
+          ` Latitude, Radius, Favorite, Thumbnail, JobStatus from ${this._tableName} where UserId = $UserId`,
       );
 
       try {
         if (this._userId) {
-          const result = await statement?.executeAsync<{
-            _id: string;
-            Code: string;
-            Name: string;
-            JobTypeId: string;
-            UserId: number;
-            Location: string;
-            OwnerName: string;
-            StartDate?: Date;
-            PlannedFinish?: Date;
-            BidPrice?: number;
-            Longitude?: number;
-            Latitude?: number;
-            Radius?: number;
-            Thumbnail?: string | undefined;
-            JobStatus: string;
-          }>(this._userId.toString());
+          const result = await statement?.executeAsync<JobData>(this._userId.toString());
 
           if (result) {
             await result.getAllAsync().then((rows) => {
               for (const row of rows) {
                 jobs.push({
-                  _id: row._id.toString(),
+                  _id: row._id,
                   Code: row.Code,
                   Name: row.Name,
                   JobTypeId: row.JobTypeId,
                   Location: row.Location,
+                  OwnerName: row.OwnerName,
                   StartDate: row.StartDate,
                   PlannedFinish: row.PlannedFinish,
                   BidPrice: row.BidPrice,
                   Longitude: row.Longitude,
                   Latitude: row.Latitude,
                   Radius: row.Radius,
+                  Favorite: row.Favorite,
                   Thumbnail: row.Thumbnail,
                   JobStatus: row.JobStatus,
                 });
