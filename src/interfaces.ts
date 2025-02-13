@@ -46,3 +46,11 @@ export interface PictureBucketData {
   DateAdded?: Date | null;
   PictureDate?: Date | null;
 }
+
+export interface TodoData {
+  _id?: string | null;
+  UserId?: string | null;
+  JobId?: string | null;
+  Todo?: string | null;
+  Completed?: boolean | null;
+}

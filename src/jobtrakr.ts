@@ -7,6 +7,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { JobTrakrSampleData } from './SampleData';
 import { DeviceDB } from './device';
+import { TodoDB } from './todo';
 import { JobData } from './interfaces';
 
 export type DBStatus = 'Success' | 'Error' | 'NoChanges';
@@ -22,6 +23,7 @@ export class JobTrakrDB {
   private _itemDB: ItemDB | null = null;
   private _pictureBucketDB: PictureBucketDB | null = null;
   private _deviceDB: DeviceDB | null = null;
+  private _todoDB: TodoDB | null = null;
 
   // custId is the customer ID obtained from the OAuth2 login process.
   // This number MUST be unique for each customer. It is used to ensure that each customer's data is kept separate.
@@ -49,15 +51,13 @@ export class JobTrakrDB {
 
   public CopyFileToDownloads = async () => {
     try {
-      const sourcePath =
-        FileSystem.documentDirectory + `SQLite/${this._dbName}`;
+      const sourcePath = FileSystem.documentDirectory + `SQLite/${this._dbName}`;
       const targetPath = FileSystem.cacheDirectory + `Download/${this._dbName}`;
 
       // Ensure target directory exists
-      await FileSystem.makeDirectoryAsync(
-        FileSystem.cacheDirectory + 'Download',
-        { intermediates: true },
-      );
+      await FileSystem.makeDirectoryAsync(FileSystem.cacheDirectory + 'Download', {
+        intermediates: true,
+      });
 
       // Copy the file
       await FileSystem.copyAsync({
@@ -83,8 +83,7 @@ export class JobTrakrDB {
   ): Promise<DBStatus> {
     try {
       if (replaceExisting) {
-        const filename =
-          FileSystem.documentDirectory + `SQLite/${this._dbName}`;
+        const filename = FileSystem.documentDirectory + `SQLite/${this._dbName}`;
         const fileInfo = await FileSystem.getInfoAsync(filename);
         if (fileInfo.exists) {
           // If the file exists, delete it
@@ -193,7 +192,7 @@ export class JobTrakrDB {
   public GetDeviceDB(): DeviceDB {
     if (this._db && !this._deviceDB) {
       this._deviceDB = new DeviceDB(this);
-      this._deviceDB?.CreateDeviceTable(); // Ensure the PictureBucket table exists. It will do a "Create if not exists" operation.
+      this._deviceDB?.CreateDeviceTable(); // Ensure the Device table exists. It will do a "Create if not exists" operation.
     }
 
     if (!this._deviceDB) {
@@ -201,6 +200,19 @@ export class JobTrakrDB {
     }
 
     return this._deviceDB;
+  }
+
+  public GetTodoDB(): TodoDB {
+    if (this._db && !this._todoDB) {
+      this._todoDB = new TodoDB(this);
+      this._todoDB.CreateTodoTable(); // Ensure the Todo table exists. It will do a "Create if not exists" operation.
+    }
+
+    if (!this._todoDB) {
+      throw new Error('JobDB is not initialized');
+    }
+
+    return this._todoDB;
   }
 
   public CreateSampleData = async () => {
