@@ -141,8 +141,9 @@ export class JobTrakrSampleData {
       let newId = { value: 0n };
       let createStatus = await this._jobTrakr?.GetJobDB().CreateJob({
         Code: '100',
-        Name: 'Keith Bertram',
+        Name: 'Lot 82',
         JobTypeId: '1',
+        OwnerName: 'Keith Bertram',
         Location: '9940 Blacksmith Way',
         StartDate: new Date(),
         PlannedFinish: new Date(),
@@ -160,8 +161,9 @@ export class JobTrakrSampleData {
 
       createStatus = await this._jobTrakr?.GetJobDB().CreateJob({
         Code: '200',
-        Name: 'Bill Steinbock',
+        Name: 'Lot 110',
         JobTypeId: '1',
+        OwnerName: 'Bill Steinbock',
         Location: 'Louisville, KY',
         StartDate: new Date(),
         PlannedFinish: new Date(),
@@ -179,9 +181,10 @@ export class JobTrakrSampleData {
 
       createStatus = await this._jobTrakr?.GetJobDB().CreateJob({
         Code: '100',
-        Name: 'Clint Eastwood',
+        Name: 'Lot 10',
         JobTypeId: '1',
         Location: 'California',
+        OwnerName: 'Clint Eastwood',
         StartDate: new Date(),
         PlannedFinish: new Date(),
         BidPrice: 1000.0,

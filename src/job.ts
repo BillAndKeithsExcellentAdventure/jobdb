@@ -377,6 +377,45 @@ export class JobDB {
     return thumbnail;
   }
 
+  public async FetchJobLocation(
+    id: string,
+  ): Promise<{ longitude: number; latitude: number } | undefined> {
+    if (!this._db) {
+      return undefined;
+    }
+
+    let location: { longitude: number | undefined; latitude: number | undefined } | undefined =
+      undefined;
+
+    await this._db.withExclusiveTransactionAsync(async (tx) => {
+      const statement = await this._db?.prepareAsync(
+        `select longitude, latitude from ${this._tableName} where _id = $id`,
+      );
+
+      try {
+        const result = await statement?.executeAsync<{
+          longitude: number | undefined;
+          latitude: number | undefined;
+          _id: string;
+        }>(id.toString());
+
+        if (result) {
+          await result.getFirstAsync().then((row) => {
+            if (row) {
+              location = { longitude: row.longitude, latitude: row.latitude };
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching thumbnail:', error);
+      } finally {
+        statement?.finalizeAsync();
+      }
+    });
+
+    return location;
+  }
+
   public async FetchJobById(id: string): Promise<{ job: JobData; status: DBStatus }> {
     let jobData: JobData = {
       Name: '',

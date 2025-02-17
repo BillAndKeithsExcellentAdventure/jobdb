@@ -54,15 +54,16 @@ export class PictureBucketDB {
   }
 
   public async InsertPicture(
-    jobId: bigint,
+    jobId: string,
     asset: MediaLibrary.Asset,
   ): Promise<{ status: DBStatus; id: string }> {
     if (!this._db) {
       return { status: 'Error', id: '0' };
     }
 
-    const location: { Latitude: number; Longitude: number } | null =
-      await this.GetAssetLatLong(asset);
+    const location: { Latitude: number; Longitude: number } | null = await this.GetAssetLatLong(
+      asset,
+    );
 
     console.log('Inserting picture asset:', asset);
     console.log(`    Location: ${location?.Latitude}, ${location?.Longitude}`);
@@ -106,7 +107,7 @@ export class PictureBucketDB {
               uid.toString(),
               this._userId ? this._userId.toString() : null,
               deviceId ? deviceId : null,
-              jobId ? jobId.toString() : null,
+              jobId ? jobId : null,
               asset.albumId ? asset.albumId : null,
               asset.id ? asset.id : null,
               currentDate ? currentDate.toString() : null,
@@ -138,14 +139,9 @@ export class PictureBucketDB {
 
     console.log('Updating jobId for picture:', id);
     await this._db.withExclusiveTransactionAsync(async (tx) => {
-      console.log(
-        'Inside withExclusiveTransactionAsync for picture bucket:',
-        id,
-      );
+      console.log('Inside withExclusiveTransactionAsync for picture bucket:', id);
       const statement = await tx.prepareAsync(
-        `update ${this._tableName} set ` +
-          ' jobId = $JobId ' +
-          ' where _id = $_id',
+        `update ${this._tableName} set ` + ' jobId = $JobId ' + ' where _id = $_id',
       );
 
       console.log('Updating picture bucket statement created for:', id);
@@ -157,14 +153,10 @@ export class PictureBucketDB {
         }>(jobId ? jobId.toString() : null, id ? id.toString() : null);
 
         if (result.changes > 0) {
-          console.log(
-            `PictureBucket updated: ${id}. Changes = ${result.changes}`,
-          );
+          console.log(`PictureBucket updated: ${id}. Changes = ${result.changes}`);
           status = 'Success';
         } else {
-          console.log(
-            `PictureBucket updated: ${id}. Changes = ${result.changes}`,
-          );
+          console.log(`PictureBucket updated: ${id}. Changes = ${result.changes}`);
           status = 'NoChanges';
         }
       } catch (error) {
@@ -189,9 +181,7 @@ export class PictureBucketDB {
     console.log('Deleting picture:', id);
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       console.log('Inside withExclusiveTransactionAsync for picture:', id);
-      const statement = await tx.prepareAsync(
-        `delete from ${this._tableName} where _id = $id`,
-      );
+      const statement = await tx.prepareAsync(`delete from ${this._tableName} where _id = $id`);
 
       console.log('Delete picture statement created for:', id);
 
@@ -219,10 +209,7 @@ export class PictureBucketDB {
     return status;
   }
 
-  private async getAssetById(
-    assetId: string,
-    albumId: string,
-  ): Promise<MediaLibrary.Asset | null> {
+  private async getAssetById(assetId: string, albumId: string): Promise<MediaLibrary.Asset | null> {
     try {
       const asset = await MediaLibrary.getAssetInfoAsync(assetId);
       if (asset && asset.albumId === albumId) {
@@ -237,13 +224,13 @@ export class PictureBucketDB {
 
   public async FetchJobAssets(
     jobId: string | undefined,
-    assets: MediaLibrary.Asset[] | undefined,
-  ): Promise<DBStatus> {
+  ): Promise<{ status: DBStatus; assets: MediaLibrary.Asset[] | undefined }> {
     if (!this._db) {
-      return 'Error';
+      return { status: 'Error', assets: undefined };
     }
 
     let status: DBStatus = 'Error';
+    let assets: MediaLibrary.Asset[] = [];
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
@@ -252,8 +239,7 @@ export class PictureBucketDB {
 
       try {
         if (jobId) {
-          const deviceId: string =
-            this._jobTrakrDB?.GetDeviceId()?.toString() || '';
+          const deviceId: string = this._jobTrakrDB?.GetDeviceId()?.toString() || '';
 
           const result = await statement?.executeAsync<{
             AlbumId: string;
@@ -280,13 +266,10 @@ export class PictureBucketDB {
       }
     });
 
-    return status;
+    return { status, assets };
   }
 
-  public async FetchJobPictures(
-    jobId: string,
-    pictures: PictureBucketData[],
-  ): Promise<DBStatus> {
+  public async FetchJobPictures(jobId: string, pictures: PictureBucketData[]): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
     }
