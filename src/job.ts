@@ -451,8 +451,14 @@ export class JobDB {
                 (jobData.JobTypeId = row?.JobTypeId),
                 (jobData.Location = row?.Location),
                 (jobData.OwnerName = row?.OwnerName),
-                (jobData.StartDate = row?.StartDate),
-                (jobData.PlannedFinish = row?.PlannedFinish),
+                (jobData.StartDate =
+                  row?.StartDate !== null && row?.StartDate !== undefined
+                    ? new Date(row?.StartDate!)
+                    : undefined),
+                (jobData.PlannedFinish =
+                  row?.PlannedFinish !== null && row?.PlannedFinish !== undefined
+                    ? new Date(row?.PlannedFinish!)
+                    : undefined),
                 (jobData.BidPrice = row?.BidPrice),
                 (jobData.Longitude = row?.Longitude),
                 (jobData.Latitude = row?.Latitude),
@@ -509,8 +515,14 @@ export class JobDB {
                   JobTypeId: row.JobTypeId,
                   Location: row.Location,
                   OwnerName: row.OwnerName,
-                  StartDate: row.StartDate,
-                  PlannedFinish: row.PlannedFinish,
+                  StartDate:
+                    row.StartDate !== null && row.StartDate !== undefined
+                      ? new Date(row.StartDate)
+                      : undefined,
+                  PlannedFinish:
+                    row.PlannedFinish !== null && row.PlannedFinish !== undefined
+                      ? new Date(row.PlannedFinish)
+                      : undefined,
                   BidPrice: row.BidPrice,
                   Longitude: row.Longitude,
                   Latitude: row.Latitude,
