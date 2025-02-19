@@ -54,3 +54,19 @@ export interface TodoData {
   Todo?: string | null;
   Completed?: boolean | null;
 }
+
+export interface ReceiptBucketData {
+  _id?: string;
+  UserId?: string;
+  JobId?: string;
+  DeviceId?: string;
+  Amount?: number;
+  Vendor?: number;
+  Description?: string;
+  Notes?: string;
+  CategoryId?: string;
+  ItemId?: string;
+  AssetId?: string;
+  AlbumId?: string;
+  PictureUri?: string;
+}

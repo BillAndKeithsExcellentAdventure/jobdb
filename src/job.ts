@@ -394,15 +394,17 @@ export class JobDB {
 
       try {
         const result = await statement?.executeAsync<{
-          longitude: number | undefined;
-          latitude: number | undefined;
-          _id: string;
-        }>(id.toString());
+          Longitude: number | undefined;
+          Latitude: number | undefined;
+        }>(id);
+
+        console.log('FetchJobLocation result:', result);
 
         if (result) {
           await result.getFirstAsync().then((row) => {
+            console.log('FetchJobLocation row:', row);
             if (row) {
-              location = { longitude: row.longitude, latitude: row.latitude };
+              location = { longitude: row.Longitude, latitude: row.Latitude };
             }
           });
         }
@@ -443,7 +445,7 @@ export class JobDB {
 
           if (result) {
             await result.getFirstAsync().then((row) => {
-              (jobData._id = row?._id),
+              (jobData._id = row?._id?.toString()),
                 (jobData.Code = row?.Code),
                 (jobData.Name = row?.Name ? row?.Name : ''),
                 (jobData.JobTypeId = row?.JobTypeId),
@@ -501,7 +503,7 @@ export class JobDB {
             await result.getAllAsync().then((rows) => {
               for (const row of rows) {
                 jobs.push({
-                  _id: row._id,
+                  _id: row._id?.toString(),
                   Code: row.Code,
                   Name: row.Name,
                   JobTypeId: row.JobTypeId,

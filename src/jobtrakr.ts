@@ -3,6 +3,7 @@ import { JobDB } from './job';
 import { CategoryDB } from './Category';
 import { ItemDB } from './Item';
 import { PictureBucketDB } from './pictureBucket';
+import { ReceiptBucketDB } from './receiptBucket';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { JobTrakrSampleData } from './SampleData';
@@ -22,6 +23,7 @@ export class JobTrakrDB {
   private _categoryDB: CategoryDB | null = null;
   private _itemDB: ItemDB | null = null;
   private _pictureBucketDB: PictureBucketDB | null = null;
+  private _receiptBucketDB: ReceiptBucketDB | null = null;
   private _deviceDB: DeviceDB | null = null;
   private _todoDB: TodoDB | null = null;
 
@@ -187,6 +189,19 @@ export class JobTrakrDB {
     }
 
     return this._pictureBucketDB;
+  }
+
+  public GetReceiptBucketDB(): ReceiptBucketDB {
+    if (this._db && !this._receiptBucketDB) {
+      this._receiptBucketDB = new ReceiptBucketDB(this);
+      this._receiptBucketDB?.CreateReceiptBucketTable(); // Ensure the ReceipitBucket table exists. It will do a "Create if not exists" operation.
+    }
+
+    if (!this._receiptBucketDB) {
+      throw new Error('ReceiptBucketDB is not initialized');
+    }
+
+    return this._receiptBucketDB;
   }
 
   public GetDeviceDB(): DeviceDB {

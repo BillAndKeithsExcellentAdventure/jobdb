@@ -81,7 +81,7 @@ export class TodoDB {
     return { status, id };
   }
 
-  public async UpdateJob(todo: TodoData): Promise<DBStatus> {
+  public async UpdateTodo(todo: TodoData): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
     }
