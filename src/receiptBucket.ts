@@ -211,7 +211,7 @@ export class ReceiptBucketDB {
     return status;
   }
 
-  public async DeleteReceipt(id: bigint): Promise<DBStatus> {
+  public async DeleteReceipt(id: string): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
     }
@@ -228,7 +228,7 @@ export class ReceiptBucketDB {
       try {
         let result = await statement.executeAsync<{
           _id: string;
-        }>(id ? id.toString() : null);
+        }>(id ? id : null);
 
         if (result.changes > 0) {
           console.log(`Receipt deleted: ${id}. Changes = ${result.changes}`);

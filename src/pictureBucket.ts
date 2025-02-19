@@ -1,7 +1,7 @@
 import { SQLiteDatabase, openDatabaseAsync } from 'expo-sqlite'; // Use 'react-native-sqlite-storage' if using React Native
 import { JobTrakrDB, DBStatus } from './jobtrakr';
 import { BuildUniqueId } from './dbutils';
-import { PictureBucketData } from './interfaces';
+import { PictureBucketAsset, PictureBucketData } from './interfaces';
 import * as MediaLibrary from 'expo-media-library';
 
 export class PictureBucketDB {
@@ -171,7 +171,7 @@ export class PictureBucketDB {
     return status;
   }
 
-  public async DeletePicture(id: bigint): Promise<DBStatus> {
+  public async DeletePicture(id: string): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
     }
@@ -188,7 +188,7 @@ export class PictureBucketDB {
       try {
         let result = await statement.executeAsync<{
           _id: string;
-        }>(id ? id.toString() : null);
+        }>(id ? id : null);
 
         if (result.changes > 0) {
           console.log(`Picture deleted: ${id}. Changes = ${result.changes}`);
@@ -224,17 +224,17 @@ export class PictureBucketDB {
 
   public async FetchJobAssets(
     jobId: string | undefined,
-  ): Promise<{ status: DBStatus; assets: MediaLibrary.Asset[] | undefined }> {
+  ): Promise<{ status: DBStatus; assets: PictureBucketAsset[] | undefined }> {
     if (!this._db) {
       return { status: 'Error', assets: undefined };
     }
 
     let status: DBStatus = 'Error';
-    let assets: MediaLibrary.Asset[] = [];
+    let assets: PictureBucketAsset[] = [];
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
-        `select AlbumId, AssetId from ${this._tableName} where JobId = $JobId and DeviceId = $DeviceId`,
+        `select _id, AlbumId, AssetId from ${this._tableName} where JobId = $JobId and DeviceId = $DeviceId`,
       );
 
       try {
@@ -242,6 +242,7 @@ export class PictureBucketDB {
           const deviceId: string = this._jobTrakrDB?.GetDeviceId()?.toString() || '';
 
           const result = await statement?.executeAsync<{
+            _id: string;
             AlbumId: string;
             AssetId: string;
           }>(jobId, deviceId);
@@ -251,7 +252,7 @@ export class PictureBucketDB {
               for (const row of rows) {
                 const asset = await this.getAssetById(row.AssetId, row.AlbumId);
                 if (asset) {
-                  assets?.push(asset);
+                  assets?.push({ _id: row._id, asset });
                 }
               }
             });

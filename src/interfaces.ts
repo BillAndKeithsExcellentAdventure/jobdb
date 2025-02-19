@@ -1,3 +1,5 @@
+import * as MediaLibrary from 'expo-media-library';
+
 export interface JobData {
   _id?: string;
   Code?: string;
@@ -34,6 +36,11 @@ export interface JobCategoryItemData {
   ItemStatus?: string | null;
 }
 
+export interface PictureBucketAsset {
+  _id?: string | null;
+  asset?: MediaLibrary.Asset;
+}
+
 export interface PictureBucketData {
   _id?: string | null;
   UserId?: string | null;
@@ -53,6 +60,11 @@ export interface TodoData {
   JobId?: string | null;
   Todo?: string | null;
   Completed?: boolean | null;
+}
+
+export interface ReceiptBucketAsset {
+  _id?: string | null;
+  asset?: MediaLibrary.Asset;
 }
 
 export interface ReceiptBucketData {
