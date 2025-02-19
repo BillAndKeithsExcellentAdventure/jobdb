@@ -171,7 +171,7 @@ export class PictureBucketDB {
     return status;
   }
 
-  public async DeletePicture(id: string): Promise<DBStatus> {
+  public async RemovePicture(id: string): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
     }
