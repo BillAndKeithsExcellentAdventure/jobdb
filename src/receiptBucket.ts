@@ -115,6 +115,61 @@ export class ReceiptBucketDB {
     return { status, id };
   }
 
+  public async UpdateReceipt(receipt: ReceiptBucketData): Promise<DBStatus> {
+    if (!this._db) {
+      return 'Error';
+    }
+
+    let status: DBStatus = 'Error';
+
+    console.log('Updating receipt:', receipt._id);
+    await this._db.withExclusiveTransactionAsync(async (tx) => {
+      console.log('Inside withExclusiveTransactionAsync for receipt:', receipt._id);
+      const statement = await tx.prepareAsync(
+        `update ${this._tableName} set ` +
+          ' DeviceId = $DeviceId, JobId = $JobId, Amount = $Amount, Vendor = $Vendor, Description = $Description,' +
+          ' Notes = $Notes, CategoryId = $CategoryId, ItemId = $ItemId, AssetId = $AssetId, ' +
+          ' AlbumId = $AlbumId, PictureUri = $PictureUri ' +
+          ' where _id = $_id',
+      );
+
+      console.log('Updating receipt statement created for:', receipt._id);
+
+      try {
+        let result = await statement.executeAsync<ReceiptBucketData>(
+          receipt.DeviceId ? receipt.DeviceId : null,
+          receipt.JobId ? receipt.JobId.toString() : null,
+          receipt.Amount ? receipt.Amount : null,
+          receipt.Vendor ? receipt.Vendor : null,
+          receipt.Description ? receipt.Description : null,
+          receipt.Notes ? receipt.Notes : null,
+          receipt.CategoryId ? receipt.CategoryId.toString() : null,
+          receipt.ItemId ? receipt.ItemId.toString() : null,
+          receipt.AssetId ? receipt.AssetId.toString() : null,
+          receipt.AlbumId ? receipt.AlbumId.toString() : null,
+          receipt.PictureUri ? receipt.PictureUri : null,
+          receipt._id ? receipt._id.toString() : null,
+        );
+
+        if (result.changes > 0) {
+          console.log(`Receipt updated: ${receipt._id}. Changes = ${result.changes}`);
+          status = 'Success';
+        } else {
+          console.log(`Receipt updated: ${receipt._id}. Changes = ${result.changes}`);
+          status = 'NoChanges';
+        }
+      } catch (error) {
+        console.error('Error updating receipt:', error);
+        status = 'Error';
+      } finally {
+        statement.finalizeAsync();
+      }
+    });
+
+    console.log('Returning from update statement:', receipt._id);
+    return status;
+  }
+
   public async UpdateJobId(id: bigint, jobId: bigint): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
