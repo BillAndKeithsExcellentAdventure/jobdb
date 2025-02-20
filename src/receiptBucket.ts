@@ -31,7 +31,7 @@ export class ReceiptBucketDB {
         'ItemId NUMBER, ' +
         'AssetId TEXT, ' +
         'AlbumId TEXT, ' +
-        'PictureUri TEXT ',
+        'PictureUri TEXT) ',
     );
 
     return 'Success';
@@ -259,11 +259,13 @@ export class ReceiptBucketDB {
     let status: DBStatus = 'Error';
     let data: ReceiptBucketData[] = [];
 
+    console.log('Fetching receipts');
+
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
-        `select UserId, JobId, DeviceId, Amount, Vendor, Description, Notes, CategoryId, Itemid, AssetId, AlbumId, PictureUri from ${this._tableName} where JobId = $JobId`,
+        `select UserId, JobId, DeviceId, Amount, Vendor, Description, Notes, CategoryId, ItemId, AssetId, AlbumId, PictureUri from ${this._tableName} where JobId = $JobId`,
       );
-
+      console.log('done building prepare statement for receipts');
       try {
         if (jobId) {
           const result = await statement?.executeAsync<{
