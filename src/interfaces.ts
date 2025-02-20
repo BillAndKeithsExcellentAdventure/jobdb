@@ -73,7 +73,7 @@ export interface ReceiptBucketData {
   JobId?: string;
   DeviceId?: string;
   Amount?: number;
-  Vendor?: number;
+  Vendor?: string;
   Description?: string;
   Notes?: string;
   CategoryId?: string;
@@ -81,4 +81,18 @@ export interface ReceiptBucketData {
   AssetId?: string;
   AlbumId?: string;
   PictureUri?: string;
+}
+
+export interface VendorData {
+  _id?: string;
+  UserId?: string;
+  VendorName?: string;
+  Address?: string;
+  Address2?: string;
+  City?: string;
+  State?: string;
+  Zip?: string;
+  MobilePhone?: string;
+  BusinessPhone?: string;
+  Notes?: string;
 }

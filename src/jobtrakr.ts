@@ -10,6 +10,7 @@ import { JobTrakrSampleData } from './SampleData';
 import { DeviceDB } from './device';
 import { TodoDB } from './todo';
 import { JobData } from './interfaces';
+import { VendorDB } from './vendor';
 
 export type DBStatus = 'Success' | 'Error' | 'NoChanges';
 
@@ -26,6 +27,7 @@ export class JobTrakrDB {
   private _receiptBucketDB: ReceiptBucketDB | null = null;
   private _deviceDB: DeviceDB | null = null;
   private _todoDB: TodoDB | null = null;
+  private _vendorDB: VendorDB | null = null;
 
   // custId is the customer ID obtained from the OAuth2 login process.
   // This number MUST be unique for each customer. It is used to ensure that each customer's data is kept separate.
@@ -228,6 +230,19 @@ export class JobTrakrDB {
     }
 
     return this._todoDB;
+  }
+
+  public GetVendorDB(): VendorDB {
+    if (this._db && !this._vendorDB) {
+      this._vendorDB = new VendorDB(this);
+      this._vendorDB.CreateVendorTable(); // Ensure the Vendor table exists. It will do a "Create if not exists" operation.
+    }
+
+    if (!this._vendorDB) {
+      throw new Error('VendorDB is not initialized');
+    }
+
+    return this._vendorDB;
   }
 
   public CreateSampleData = async () => {

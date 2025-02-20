@@ -271,7 +271,7 @@ export class ReceiptBucketDB {
             JobId?: string;
             DeviceId?: string;
             Amount?: number;
-            Vendor?: number;
+            Vendor?: string;
             Description?: string;
             Notes?: string;
             CategoryId?: string;
