@@ -1,6 +1,6 @@
 {
   "name": "jobdb",
-  "version": "1.9.6",
+  "version": "1.9.7",
   "description": "Package to interact with a Job database.",
   "main": "dist/index.js",
   "type": "module",
