@@ -263,12 +263,13 @@ export class ReceiptBucketDB {
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
-        `select UserId, JobId, DeviceId, Amount, Vendor, Description, Notes, CategoryId, ItemId, AssetId, AlbumId, PictureUri from ${this._tableName} where JobId = $JobId`,
+        `select _id, UserId, JobId, DeviceId, Amount, Vendor, Description, Notes, CategoryId, ItemId, AssetId, AlbumId, PictureUri from ${this._tableName} where JobId = $JobId`,
       );
       console.log('done building prepare statement for receipts');
       try {
         if (jobId) {
           const result = await statement?.executeAsync<{
+            _id?: string;
             UserId?: string;
             JobId?: string;
             DeviceId?: string;
@@ -280,7 +281,7 @@ export class ReceiptBucketDB {
             ItemId?: string;
             AssetId: string;
             AlbumId: string;
-            PictureId: string;
+            PictureUri: string;
           }>(jobId);
 
           if (result) {
