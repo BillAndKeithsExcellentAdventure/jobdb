@@ -53,8 +53,8 @@ export class ReceiptBucketDB {
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       console.log('preparing statement for ReceiptBucket');
       const statement = await tx.prepareAsync(
-        `INSERT INTO ${this._tableName} (_id, userId, DeviceId, JobId, Vendor, Description, Notes, CategoryId, ItemId, AssetId, AlbumId, PictureUri) ` +
-          ' VALUES ($_id, $userId, $DeviceId, $JobId, $Vendor, $Description, $Notes, $CategoryId, $ItemId, $AssetId, $AlbumId, $PictureUri)',
+        `INSERT INTO ${this._tableName} (_id, userId, DeviceId, JobId, Vendor, Amount, Description, Notes, CategoryId, ItemId, AssetId, AlbumId, PictureUri) ` +
+          ' VALUES ($_id, $userId, $DeviceId, $JobId, $Vendor, $Amount, $Description, $Notes, $CategoryId, $ItemId, $AssetId, $AlbumId, $PictureUri)',
       );
 
       console.log('Create ReceiptBucket statement created');
@@ -90,8 +90,8 @@ export class ReceiptBucketDB {
               this._userId ? this._userId.toString() : null,
               deviceId ? deviceId : null,
               jobId ? jobId : null,
-              receipt.Amount ? receipt.Amount : null,
               receipt.Vendor ? receipt.Vendor : null,
+              receipt.Amount ? receipt.Amount : null,
               receipt.Description ? receipt.Description : null,
               receipt.Notes ? receipt.Notes : null,
               receipt?.CategoryId ? receipt.CategoryId.toString() : null,
@@ -287,6 +287,7 @@ export class ReceiptBucketDB {
           if (result) {
             await result.getAllAsync().then(async (rows) => {
               for (const row of rows) {
+                console.log('Receipt Row:', row);
                 data?.push(row);
               }
             });
