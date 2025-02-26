@@ -295,7 +295,63 @@ export class ReceiptBucketDB {
         }
         status = 'Success';
       } catch (error) {
-        console.error('Error fetching assets:', error);
+        console.error('Error fetching receipts:', error);
+        status = 'Error';
+      } finally {
+        statement?.finalizeAsync();
+      }
+    });
+
+    return { status, data };
+  }
+
+  public async FetchJobReceipt(
+    receiptId: string | undefined,
+  ): Promise<{ status: DBStatus; data: ReceiptBucketData | undefined }> {
+    if (!this._db) {
+      return { status: 'Error', data: undefined };
+    }
+
+    let status: DBStatus = 'Error';
+    let data: ReceiptBucketData | undefined = undefined;
+
+    console.log(`Fetching receipt ${receiptId}`);
+
+    await this._db.withExclusiveTransactionAsync(async (tx) => {
+      const statement = await this._db?.prepareAsync(
+        `select _id, UserId, JobId, DeviceId, Amount, Vendor, Description, Notes, CategoryId, ItemId, AssetId, AlbumId, PictureUri from ${this._tableName} where _id = $_id`,
+      );
+      console.log('done building prepare statement for receipts');
+      try {
+        if (receiptId) {
+          const result = await statement?.executeAsync<{
+            _id?: string;
+            UserId?: string;
+            JobId?: string;
+            DeviceId?: string;
+            Amount?: number;
+            Vendor?: string;
+            Description?: string;
+            Notes?: string;
+            CategoryId?: string;
+            ItemId?: string;
+            AssetId: string;
+            AlbumId: string;
+            PictureUri: string;
+          }>(receiptId);
+
+          if (result) {
+            await result.getFirstAsync().then(async (row) => {
+              console.log('Receipt Row:', row);
+              if (row) {
+                data = row;
+              }
+            });
+          }
+        }
+        status = 'Success';
+      } catch (error) {
+        console.error('Error fetching receipt:', error);
         status = 'Error';
       } finally {
         statement?.finalizeAsync();
