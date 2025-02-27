@@ -263,26 +263,12 @@ export class ReceiptBucketDB {
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
-        `select _id, UserId, JobId, DeviceId, Amount, Vendor, Description, Notes, CategoryId, ItemId, AssetId, AlbumId, PictureUri from ${this._tableName} where JobId = $JobId`,
+        `select cast(_id as text) _id, UserId, JobId, DeviceId, Amount, Vendor, Description, Notes, CategoryId, ItemId, AssetId, AlbumId, PictureUri from ${this._tableName} where JobId = $JobId`,
       );
       console.log('done building prepare statement for receipts');
       try {
         if (jobId) {
-          const result = await statement?.executeAsync<{
-            _id?: string;
-            UserId?: string;
-            JobId?: string;
-            DeviceId?: string;
-            Amount?: number;
-            Vendor?: string;
-            Description?: string;
-            Notes?: string;
-            CategoryId?: string;
-            ItemId?: string;
-            AssetId: string;
-            AlbumId: string;
-            PictureUri: string;
-          }>(jobId);
+          const result = await statement?.executeAsync<ReceiptBucketData>(jobId);
 
           if (result) {
             await result.getAllAsync().then(async (rows) => {
@@ -319,7 +305,7 @@ export class ReceiptBucketDB {
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
-        `select _id, UserId, JobId, DeviceId, Amount, Vendor, Description, Notes, CategoryId, ItemId, AssetId, AlbumId, PictureUri from ${this._tableName} where _id = $_id`,
+        `select cast(_id as text) _id, UserId, JobId, DeviceId, Amount, Vendor, Description, Notes, CategoryId, ItemId, AssetId, AlbumId, PictureUri from ${this._tableName} where _id = $_id`,
       );
       console.log('done building prepare statement for receipts');
       try {
