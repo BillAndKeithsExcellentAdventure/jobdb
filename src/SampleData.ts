@@ -28,7 +28,7 @@ export class JobTrakrSampleData {
   };
 
   private CreateSampleCategory = async (data: {
-    JobId: bigint;
+    JobId: string;
     Code: string;
     Name: string;
     EstPrice: number;
@@ -44,7 +44,7 @@ export class JobTrakrSampleData {
     return createStatus;
   };
 
-  private CreateSampleCategories = async (jobId: bigint): Promise<DBStatus> => {
+  private CreateSampleCategories = async (jobId: string): Promise<DBStatus> => {
     let status = await this.CreateSampleCategory({
       JobId: jobId,
       Code: '100',
@@ -138,7 +138,6 @@ export class JobTrakrSampleData {
 
   public CreateSampleData = async () => {
     if (this._jobTrakr) {
-      let newId = { value: 0n };
       let createStatus = await this._jobTrakr?.GetJobDB().CreateJob({
         Code: '100',
         Name: 'Lot 82',
@@ -156,7 +155,7 @@ export class JobTrakrSampleData {
       });
       console.log('Create Job Status: ', createStatus);
       if (createStatus.status === 'Success') {
-        await this.CreateSampleCategories(newId.value);
+        await this.CreateSampleCategories(createStatus.id);
       }
 
       createStatus = await this._jobTrakr?.GetJobDB().CreateJob({
@@ -176,7 +175,7 @@ export class JobTrakrSampleData {
       });
       console.log('Create Job Status: ', createStatus);
       if (createStatus.status === 'Success') {
-        await this.CreateSampleCategories(newId.value);
+        await this.CreateSampleCategories(createStatus.id);
       }
 
       createStatus = await this._jobTrakr?.GetJobDB().CreateJob({
@@ -196,7 +195,7 @@ export class JobTrakrSampleData {
       });
       console.log('Create Job Status: ', createStatus);
       if (createStatus.status === 'Success') {
-        await this.CreateSampleCategories(newId.value);
+        await this.CreateSampleCategories(createStatus.id);
       }
     }
   };

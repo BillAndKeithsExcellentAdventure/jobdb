@@ -103,10 +103,9 @@ export class JobTrakrDB {
       }
 
       // Get the database id for this device.
-      const id: { value: bigint | undefined } = { value: undefined };
-      const status: DBStatus = await this.GetDeviceDB().GetDeviceId(id);
-      if (status === 'Success') {
-        this._deviceId = id.value;
+      const deviceId = await this.GetDeviceDB().GetDeviceId();
+      if (deviceId.status === 'Success') {
+        this._deviceId = BigInt(deviceId.id);
 
         if (createSample) {
           const jobs = await this.GetJobDB().FetchAllJobs();

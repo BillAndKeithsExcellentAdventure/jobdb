@@ -29,9 +29,7 @@ export class ItemDB {
     return 'Success';
   }
 
-  public async CreateItem(
-    item: JobCategoryItemData,
-  ): Promise<{ status: DBStatus; id: string }> {
+  public async CreateItem(item: JobCategoryItemData): Promise<{ status: DBStatus; id: string }> {
     if (!this._db) {
       return { status: 'Error', id: '0' };
     }
@@ -96,10 +94,7 @@ export class ItemDB {
 
     console.log('Updating item:', item._id);
     await this._db.withExclusiveTransactionAsync(async (tx) => {
-      console.log(
-        'Inside withExclusiveTransactionAsync for category:',
-        item._id,
-      );
+      console.log('Inside withExclusiveTransactionAsync for category:', item._id);
       const statement = await tx.prepareAsync(
         `update ${this._tableName} set ` +
           ' categoryId = $CategoryId, code = $Code, itemname = $ItemName, ' +
@@ -145,7 +140,7 @@ export class ItemDB {
     return status;
   }
 
-  public async DeleteItem(id: bigint): Promise<DBStatus> {
+  public async DeleteItem(id: string): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
     }
@@ -155,16 +150,14 @@ export class ItemDB {
     console.log('Deleting item:', id);
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       console.log('Inside withExclusiveTransactionAsync for item:', id);
-      const statement = await tx.prepareAsync(
-        `delete from ${this._tableName} where _id = $id`,
-      );
+      const statement = await tx.prepareAsync(`delete from ${this._tableName} where _id = $id`);
 
       console.log('Delete item statement created for:', id);
 
       try {
         let result = await statement.executeAsync<{
           _id: string;
-        }>(id ? id.toString() : null);
+        }>(id);
 
         if (result.changes > 0) {
           console.log(`Item deleted: ${id}. Changes = ${result.changes}`);
@@ -186,14 +179,14 @@ export class ItemDB {
   }
 
   public async FetchAllItems(
-    categoryId: bigint,
-    items: JobCategoryItemData[],
-  ): Promise<DBStatus> {
+    categoryId: string,
+  ): Promise<{ items: JobCategoryItemData[]; status: DBStatus }> {
     if (!this._db) {
-      return 'Error';
+      return { items: [], status: 'Error' };
     }
 
     let status: DBStatus = 'Error';
+    let items: JobCategoryItemData[] = [];
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
@@ -233,6 +226,6 @@ export class ItemDB {
       }
     });
 
-    return status;
+    return { status, items };
   }
 }

@@ -30,9 +30,7 @@ export class CategoryDB {
     return 'Success';
   }
 
-  public async CreateCategory(
-    cat: JobCategoryData,
-  ): Promise<{ status: DBStatus; id: string }> {
+  public async CreateCategory(cat: JobCategoryData): Promise<{ status: DBStatus; id: string }> {
     if (!this._db) {
       return { id: '0', status: 'Error' };
     }
@@ -97,10 +95,7 @@ export class CategoryDB {
 
     console.log('Updating category:', cat._id);
     await this._db.withExclusiveTransactionAsync(async (tx) => {
-      console.log(
-        'Inside withExclusiveTransactionAsync for category:',
-        cat._id,
-      );
+      console.log('Inside withExclusiveTransactionAsync for category:', cat._id);
       const statement = await tx.prepareAsync(
         `update ${this._tableName} set ` +
           ' jobId = $JobId, code = $Code, categoryname = $CategoryName, ' +
@@ -128,14 +123,10 @@ export class CategoryDB {
         );
 
         if (result.changes > 0) {
-          console.log(
-            `Category updated: ${cat._id}. Changes = ${result.changes}`,
-          );
+          console.log(`Category updated: ${cat._id}. Changes = ${result.changes}`);
           status = 'Success';
         } else {
-          console.log(
-            `Category updated: ${cat._id}. Changes = ${result.changes}`,
-          );
+          console.log(`Category updated: ${cat._id}. Changes = ${result.changes}`);
           status = 'NoChanges';
         }
       } catch (error) {
@@ -150,7 +141,7 @@ export class CategoryDB {
     return status;
   }
 
-  public async DeleteCategory(id: bigint): Promise<DBStatus> {
+  public async DeleteCategory(id: string): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
     }
@@ -160,9 +151,7 @@ export class CategoryDB {
     console.log('Deleting category:', id);
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       console.log('Inside withExclusiveTransactionAsync for category:', id);
-      const statement = await tx.prepareAsync(
-        `delete from ${this._tableName} where _id = $id`,
-      );
+      const statement = await tx.prepareAsync(`delete from ${this._tableName} where _id = $id`);
 
       console.log('Delete category statement created for:', id);
 
@@ -191,14 +180,13 @@ export class CategoryDB {
   }
 
   public async FetchAllCategories(
-    jobId: bigint,
-    categories: JobCategoryData[],
-  ): Promise<DBStatus> {
+    jobId: string,
+  ): Promise<{ categories: JobCategoryData[]; status: DBStatus }> {
     if (!this._db) {
-      return 'Error';
+      return { categories: [], status: 'Error' };
     }
-
     let status: DBStatus = 'Error';
+    let categories: JobCategoryData[] = [];
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
@@ -238,6 +226,6 @@ export class CategoryDB {
       }
     });
 
-    return status;
+    return { status, categories };
   }
 }

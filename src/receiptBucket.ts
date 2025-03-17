@@ -170,7 +170,7 @@ export class ReceiptBucketDB {
     return status;
   }
 
-  public async UpdateJobId(id: bigint, jobId: bigint): Promise<DBStatus> {
+  public async UpdateJobId(id: string, jobId: string): Promise<DBStatus> {
     if (!this._db) {
       return 'Error';
     }
