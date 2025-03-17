@@ -53,7 +53,7 @@ export class JobTrakrDB {
     }
   };
 
-  public CopyFileToDownloads = async () => {
+  public Share = async () => {
     try {
       const sourcePath = FileSystem.documentDirectory + `SQLite/${this._dbName}`;
       const targetPath = FileSystem.cacheDirectory + `Download/${this._dbName}`;

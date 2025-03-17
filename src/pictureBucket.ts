@@ -279,7 +279,7 @@ export class PictureBucketDB {
 
     await this._db.withExclusiveTransactionAsync(async (tx) => {
       const statement = await this._db?.prepareAsync(
-        `select _id, userId, DeviceId, JobId, AlbumId, AssetId, DateAdded, Longitude, Latitude, PictureDate from ${this._tableName} where JobId = $JobId`,
+        `select _id, userId, DeviceId, JobId, AlbumId, AssetId, DateAdded, Longitude, Latitude, datetime(PictureDate, 'unixepoch', 'localtime') PictureDate from ${this._tableName} where JobId = $JobId`,
       );
 
       try {
